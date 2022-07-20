@@ -2,6 +2,7 @@ import csv
 import os
 import time
 import sys
+import string
 from pymongo import MongoClient
 import pandas as pd
 from gensim.models import Word2Vec
@@ -10,15 +11,14 @@ from gensim.models import Word2Vec
 cluster = MongoClient("mongodb://localhost:27017/")
 db = cluster["CGUScholar_com"]
 
-
 def get_scholar_profile_from_mongoDB(filename):
     if (os.path.exists(filename) and os.path.isfile(filename)):
         os.remove(filename)
 
     max_length = 0
-    totalSize = 1 #db.articles.estimated_document_count()
+    totalSize = db.articles.estimated_document_count()
     start = 0
-    slice_size = 1
+    slice_size = 2000
 
     i = start
     current = start
@@ -28,6 +28,7 @@ def get_scholar_profile_from_mongoDB(filename):
         # 存放 slice_size位學者的資料
         collection_dataList = []
         scholarID_list = []
+
         if (current + slice_size) - start > totalSize: slice_size = totalSize - current
 
         # 從start開始讀取slice_size筆資料
@@ -56,15 +57,22 @@ def get_scholar_profile_from_mongoDB(filename):
 
                 data.append(article['source'])
 
+                # no remove punctuation
+		        #title = article['title'].split(" ")
+
+                # remove punctuation !"#$%&'()*+,-./:;<=>?@[\]^_`{|}~
+                article_title = article['title'].translate(str.maketrans('', '', string.punctuation))
+                title = article_title.split(" ")
                 #article_title = article['title'].replace(",", "").replace(":", "").replace(".", "") # . &  ...
-                title = article['title'].split(" ")
+
                 data.extend(title)
 
             data = list(set(data)) # remove duplicates
             data = list(filter(None, data)) # remove empty string ''
-            scholarID_list.append(doc['_id'])
+
+            #scholarID_list.append(doc['_id'])
             #scholarID_list.append(len(data))
-            #data.insert(0, doc['_id']) # insert scholar_id
+            data.insert(0, doc['_id']) # insert scholar_id
             #data.insert(1,len(data))
 
             print("i: ", i, ", id: ", doc['_id'], ", len: ", len(data), " ,size: ", sys.getsizeof(data))
@@ -73,23 +81,34 @@ def get_scholar_profile_from_mongoDB(filename):
 
             collection_dataList.append(data)
 
-        model = Word2Vec(collection_dataList, min_count=1, vector_size=1)
-        model.wv.save_word2vec_format("vector1.txt", binary=False)
+        #model = Word2Vec(collection_dataList, min_count=1, vector_size=1)
+        #model.wv.save_word2vec_format("vector1.txt", binary=False)
 
-        collection_dataframe = pd.DataFrame(collection_dataList)
-        collection_dataframe.insert(0, "ID", scholarID_list, True)
-        print(collection_dataframe.head)
-        # write slice_size data to file
-        #with open(filename, 'a') as f:
-        #    write = csv.writer(f)
-        #    write.writerows(collection_dataframe)
-        collection_dataframe.to_csv(filename, encoding='utf-8', index=False)
+        #collection_dataList = pd.DataFrame(collection_dataList)
+        #collection_dataList.insert(0, "ID", scholarID_list, True)
+        #collection_dataList.to_csv(filename, encoding='utf-8', index=False)
+        #collection_dataList = collection_dataList.values
+        #print(collection_dataList.head)
+        #write slice_size data to file
+        with open(filename, 'a') as f:
+            write = csv.writer(f)
+            write.writerows(collection_dataList)
+
 
         print(f"size: {sys.getsizeof(collection_dataList)}, max: {max_length}")
 
         current = current + slice_size
 
     print("max_length: ",max_length)
+    #collection_dataList = pd.DataFrame(collection_dataList)
+    #collection_dataList.insert(0, "ID", scholarID_list, True)
+    #collection_dataList.to_csv(filename, encoding='utf-8', index=False)
+    #collection_dataList = collection_dataList.values
+    #print(collection_dataList.head)
+    # write slice_size data to file
+    #with open(filename, 'a') as f:
+    #    write = csv.writer(f)
+    #    write.writerows(collection_dataList)
 
 start_time = time.time()
 get_scholar_profile_from_mongoDB("./data/data_2.txt")
