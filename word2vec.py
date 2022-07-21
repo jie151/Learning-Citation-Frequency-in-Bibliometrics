@@ -16,6 +16,8 @@ def get_scholar_profile_from_mongoDB(filename):
     # remove a file if exists
     if (os.path.exists(filename) and os.path.isfile(filename)):
         os.remove(filename)
+    if (os.path.exists("./data/scholarID.csv") and os.path.isfile("./data/scholarID.csv")):
+        os.remove("./data/scholarID.csv")
 
     max_length = 0 # the largest set of vectors
     totalSize = 5000#db.articles.estimated_document_count()
@@ -69,7 +71,7 @@ def get_scholar_profile_from_mongoDB(filename):
             #data.insert(1,len(data))
 
             scholarID_list.append(doc['_id'])
-            #scholarID_list.append(len(data))
+            scholarID_list.append(len(data))
 
             print("i: ", i, ", id: ", doc['_id'], ", len: ", len(data), " ,size: ", sys.getsizeof(data))
             i = i + 1
@@ -80,8 +82,9 @@ def get_scholar_profile_from_mongoDB(filename):
         with open(filename, 'a') as f:
             f.writelines('\n'.join([' '.join(_data) for _data in collection_dataList]))
             f.write('\n')
-            #write = csv.writer(f)
-            #write.writerows(collection_dataList)
+        with open("./data/scholarID.csv", 'a') as f:
+            write = csv.writer(f)
+            write.writerows(scholarID_list)
 
         print(f"size: {sys.getsizeof(collection_dataList)}, max: {max_length}")
 
