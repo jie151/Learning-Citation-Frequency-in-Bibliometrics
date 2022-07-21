@@ -54,3 +54,5 @@ model.wv.save_word2vec_format('test.txt', binary=False)
 # get word vector
 vector = get_vector(rowData_list)
 print(vector)
+
+

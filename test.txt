@@ -1,18 +1,4 @@
-17 1
-physics -0.053706937
-high 0.023784652
-nuclear 0.51033497
-density 0.9012002
-energy -0.93009734
-astrophysics -0.7116809
-dynamics 0.6458469
-Los Alamos National Laboratory 0.8972988
-theoretical -0.5015403
-fluid -0.37641475
-plasma 0.73808175
-computational -0.15334713
-science -0.45366132
-laser 0.65540516
-Thomas E Cowan -0.48598468
-Helmholtz-Zentrum Dresden-Rossendorf -0.1815373
-Chris Fryer 0.28765798
+3 1
+機器學習 -0.053622723
+深度學習 0.023643136
+Python 0.51033497
