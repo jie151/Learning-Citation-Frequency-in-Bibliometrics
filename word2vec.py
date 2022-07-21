@@ -11,16 +11,18 @@ from gensim.models import Word2Vec
 cluster = MongoClient("mongodb://localhost:27017/")
 db = cluster["CGUScholar_com"]
 
+scholarID_file = "./data/scholarID.csv"
+
 def get_scholar_profile_from_mongoDB(filename):
 
     # remove a file if exists
     if (os.path.exists(filename) and os.path.isfile(filename)):
         os.remove(filename)
-    if (os.path.exists("./data/scholarID.csv") and os.path.isfile("./data/scholarID.csv")):
-        os.remove("./data/scholarID.csv")
+    if (os.path.exists(scholarID_file) and os.path.isfile(scholarID_file)):
+        os.remove(scholarID_file)
 
     max_length = 0 # the largest set of vectors
-    totalSize = 5000#db.articles.estimated_document_count()
+    totalSize = db.articles.estimated_document_count()
     start = 0 # control where MongoDB begins returning results
     slice_size = 5000 # the maximum number of documents/ records the cursor will return
 
@@ -70,8 +72,7 @@ def get_scholar_profile_from_mongoDB(filename):
             data.insert(0, doc['_id']) # insert scholar_id
             #data.insert(1,len(data))
 
-            scholarID_list.append(doc['_id'])
-            scholarID_list.append(len(data))
+            scholarID_list.append([doc['_id'], len(data)])
 
             print("i: ", i, ", id: ", doc['_id'], ", len: ", len(data), " ,size: ", sys.getsizeof(data))
             i = i + 1
@@ -82,7 +83,8 @@ def get_scholar_profile_from_mongoDB(filename):
         with open(filename, 'a') as f:
             f.writelines('\n'.join([' '.join(_data) for _data in collection_dataList]))
             f.write('\n')
-        with open("./data/scholarID.csv", 'a') as f:
+
+        with open(scholarID_file, 'a') as f:
             write = csv.writer(f)
             write.writerows(scholarID_list)
 
