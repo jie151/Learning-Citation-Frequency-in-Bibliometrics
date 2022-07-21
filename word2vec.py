@@ -18,7 +18,7 @@ def get_scholar_profile_from_mongoDB(filename):
         os.remove(filename)
 
     max_length = 0 # the largest set of vectors
-    totalSize = db.articles.estimated_document_count()
+    totalSize = 5000#db.articles.estimated_document_count()
     start = 0 # control where MongoDB begins returning results
     slice_size = 5000 # the maximum number of documents/ records the cursor will return
 
@@ -41,12 +41,13 @@ def get_scholar_profile_from_mongoDB(filename):
             # fetch scholar's profile by _id
             scholar_profile = list(db.cguscholar.find({"_id":doc['_id']}))
 
-            data.extend(scholar_profile[0]['personalData']['name'].split(" "))
-            data.extend(scholar_profile[0]['personalData']['university'].split(" "))
+            if(scholar_profile):
+                data.extend(scholar_profile[0]['personalData']['name'].split(" "))
+                data.extend(scholar_profile[0]['personalData']['university'].split(" "))
 
-            for label in scholar_profile[0]['personalData']['label']:
-                label = label.split("_")
-                for word in label: data.append(word)
+                for label in scholar_profile[0]['personalData']['label']:
+                    label = label.split("_")
+                    for word in label: data.append(word)
 
             for article in (doc['Articles']):
                 data.append(article['publication_date'])
@@ -90,5 +91,5 @@ def get_scholar_profile_from_mongoDB(filename):
 
 start_time = time.time()
 get_scholar_profile_from_mongoDB("./data/data.txt") #"./data/dataAll_remove_punctuation.txt"
-execute = (time.time() - start_time)/60
-print(f"execution time: {round(execute, 2)} mins")
+execute = (time.time() - start_time)
+print("execute time : ",time.strftime("%H:%M:%S", time.gmtime(execute)))
