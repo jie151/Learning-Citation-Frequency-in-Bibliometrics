@@ -114,4 +114,3 @@ start_time = time.time()
 get_scholar_profile_from_mongoDB("./data/data_2.txt")
 execute = (time.time() - start_time)/60
 print(f"execution time: {round(execute, 2)} mins")
-
