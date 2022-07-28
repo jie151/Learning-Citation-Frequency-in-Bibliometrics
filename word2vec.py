@@ -1,11 +1,11 @@
 import os
 import time
 import sys
-import string
 import re
 from pymongo import MongoClient
 from gensim.models import Word2Vec
 from gensim.models.word2vec import LineSentence
+import datetime
 
 # connect mongoDB
 cluster = MongoClient("mongodb://localhost:27017/")
@@ -20,7 +20,7 @@ def save_to_txt(filename, dataList):
 
 def get_scholar_profile_from_mongoDB(strData_filename, strData_withID_filename):
     max_length = 0 # the largest set of vectors
-    totalSize = db.articles.estimated_document_count()
+    totalSize = 10#db.articles.estimated_document_count()
 
     start = 0 # control where MongoDB begins returning results
     slice_size = 5000 # the maximum number of documents/ records the cursor will return
@@ -120,11 +120,21 @@ def remove_exist_file(filename):
     if (os.path.exists(filename) and os.path.isfile(filename)):
         os.remove(filename)
 
-strData_filename = "./data/data.txt"
-strData_withID_filename = "./data/data_withID.txt"
-vector_withID_filename = "vector_withID.txt"
-w2v_model_filename = "w2v_model.model"
-w2v_vectorTable_filename = "w2v_vectorTable.txt"
+def currentTime():
+    now = datetime.datetime.now()
+    currentTime = now.strftime("%Y-%m-%d")
+    return currentTime
+
+date  = currentTime()
+path = "./" + date
+strData_filename = path +"/data.txt"
+strData_withID_filename = path + "/data_withID.txt"
+vector_withID_filename = path + "/vector_withID.txt"
+w2v_model_filename = path + "/w2v_model.model"
+w2v_vectorTable_filename = path + "/w2v_vectorTable.txt"
+
+if not os.path.isdir(path):
+    os.makedirs(path, mode = 0o777)
 
 remove_exist_file(strData_filename)
 remove_exist_file(strData_withID_filename)
