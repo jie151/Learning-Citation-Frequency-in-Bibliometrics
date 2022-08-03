@@ -20,7 +20,7 @@ def save_to_txt(filename, dataList):
 
 def get_scholar_profile_from_mongoDB(strData_filename, strData_withID_filename):
     max_length = 0 # the largest set of vectors
-    totalSize = 10#db.articles.estimated_document_count()
+    totalSize = db.articles.estimated_document_count()
 
     start = 0 # control where MongoDB begins returning results
     slice_size = 5000 # the maximum number of documents/ records the cursor will return
