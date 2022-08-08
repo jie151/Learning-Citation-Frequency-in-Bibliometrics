@@ -67,7 +67,7 @@ def get_scholar_profile_from_mongoDB(strData_filename, strData_withID_filename):
             # remove empty string ''
             data = list(filter(None, data))
 
-            scholarID_list.append([doc['_id'], len(data)])
+            scholarID_list.append([doc['_id'], len(doc['Articles'])])
 
             print("i: ", i, ", id: ", doc['_id'], ", len: ", len(data), " ,size: ", sys.getsizeof(data))
             i = i + 1
