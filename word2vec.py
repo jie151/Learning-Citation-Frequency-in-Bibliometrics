@@ -1,11 +1,11 @@
 import os
 import time
-import sys
 import re
 from pymongo import MongoClient
 from gensim.models import Word2Vec
 from gensim.models.word2vec import LineSentence
 import datetime
+from langdetect import detect
 
 # connect mongoDB
 cluster = MongoClient("mongodb://localhost:27017/")
@@ -18,10 +18,9 @@ def save_to_txt(filename, dataList):
                 f.write("%s " % _data)
             f.write("\n")
 
-def get_scholar_profile_from_mongoDB(strData_filename, strData_withID_filename):
+def get_scholarData_from_mongoDB(strData_filename, strData_withID_filename, citedRecord_withID_filename):
     max_length = 0 # the largest set of vectors
     totalSize = db.articles.estimated_document_count()
-
     start = 0 # control where MongoDB begins returning results
     slice_size = 5000 # the maximum number of documents/ records the cursor will return
 
@@ -34,9 +33,10 @@ def get_scholar_profile_from_mongoDB(strData_filename, strData_withID_filename):
 
         # fetch data from mongoDB
         docs = list(db.articles.find({}).skip(current).limit(slice_size))
-        # slice_size scholars's data/ID
+        # slice_size scholars's data/ID/citedRecord
         collection_dataList = []
         scholarID_list = []
+        scholarCitedRecord_list = []
 
         for doc in docs:
             # a scholar's data
@@ -45,6 +45,14 @@ def get_scholar_profile_from_mongoDB(strData_filename, strData_withID_filename):
             scholar_profile = list(db.cguscholar.find({"_id":doc['_id']}))
 
             if(scholar_profile):
+
+                record_list = []
+                record_list.append(len(scholar_profile[0]['citedRecord']))
+                for record in scholar_profile[0]['citedRecord']:
+                    updateTime = record['updateTime'].replace("-", "").split()[0] # 2022-05-15 14:20:09 => 20220515
+                    record_list.extend([updateTime, record['cited']['citations']['All']])
+                scholarCitedRecord_list.append(record_list)
+
                 data.extend(scholar_profile[0]['personalData']['name'].split())
                 data.extend(scholar_profile[0]['personalData']['university'].split())
                 for label in scholar_profile[0]['personalData']['label']:
@@ -52,36 +60,41 @@ def get_scholar_profile_from_mongoDB(strData_filename, strData_withID_filename):
                     for w in label:
                         data.extend(w.split("_"))
 
+            not_ENarticle = 0
             for article in (doc['Articles']):
+                try:
+                    language = detect(article['title'])
+                    if (language != "en"): not_ENarticle = not_ENarticle + 1
+                except:
+                    not_ENarticle = not_ENarticle + 1
                 data.extend(article['publication_date'].split())
                 data.extend(article['authors'].split())
                 data.extend(article['source'].split())
                 data.extend(article['title'].split())
 
-            # remove non english characters
-            data = [re.sub("[^a-zA-Z0-9]+", "", w) for w in data]
-            # convert all characters to lowercase
-            data = [w.lower() for w in data]
-            # remove duplicates
-            data = list(set(data))
-            # remove empty string ''
-            data = list(filter(None, data))
+            data = [re.sub("[^a-zA-Z0-9]+", "", w) for w in data]   # remove non english characters
+            data = [w.lower() for w in data]                        # convert all characters to lowercase
+            data = list(set(data))                                  # remove duplicates
+            data = list(filter(None, data))                         # remove empty string ''
 
-            scholarID_list.append([doc['_id'], len(doc['Articles'])])
+            scholarID_list.append([doc['_id'], len(doc['Articles']) - not_ENarticle])
+            print(f"i: {i}, id: { doc['_id'] }, article: { len(doc['Articles']) - not_ENarticle } , len: {len(data)} ")
 
-            print("i: ", i, ", id: ", doc['_id'], ", len: ", len(data), " ,size: ", sys.getsizeof(data))
             i = i + 1
             max_length = len(data) if (max_length < len(data)) else max_length
 
             collection_dataList.append(data)
 
         save_to_txt(strData_filename, collection_dataList)
-        collection_dataList = [ID + collection for ID, collection in zip(scholarID_list,collection_dataList)]
 
+        scholarCitedRecord_list = [sID + record for sID, record in zip(scholarID_list, scholarCitedRecord_list)]
+        save_to_txt(citedRecord_withID_filename, scholarCitedRecord_list)
+
+        collection_dataList = [sID + collection for sID, collection in zip(scholarID_list,collection_dataList)]
         save_to_txt(strData_withID_filename, collection_dataList)
 
         current = current + slice_size
-    print(f"size: {sys.getsizeof(collection_dataList)}, max: {max_length}")
+    print(f"max length: {max_length}")
 
 def train_W2V_model(strData_filename, w2v_model_filename, w2v_vectorTable_filename):
     model = Word2Vec(LineSentence(strData_filename),  min_count = 1, vector_size = 1)
@@ -129,6 +142,7 @@ date  = currentTime()
 path = "./" + date
 strData_filename = path +"/data.txt"
 strData_withID_filename = path + "/data_withID.txt"
+citedRecord_withID_filename = path + "/citedRecord_withID.txt"
 vector_withID_filename = path + "/vector_withID.txt"
 w2v_model_filename = path + "/w2v_model.model"
 w2v_vectorTable_filename = path + "/w2v_vectorTable.txt"
@@ -139,9 +153,11 @@ if not os.path.isdir(path):
 remove_exist_file(strData_filename)
 remove_exist_file(strData_withID_filename)
 remove_exist_file(vector_withID_filename)
+remove_exist_file(citedRecord_withID_filename)
 
 start_time = time.time()
-get_scholar_profile_from_mongoDB(strData_filename, strData_withID_filename)
+
+get_scholarData_from_mongoDB(strData_filename, strData_withID_filename, citedRecord_withID_filename)
 execute = (time.time() - start_time)
 print("fetch data from DB : ",time.strftime("%H:%M:%S", time.gmtime(execute)))
 
