@@ -1,3 +1,4 @@
+from math import dist
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -17,20 +18,24 @@ def analysis_vectorLen(data_withID_filename, date):
     dataList = []
     number_of_scholars = 0
 
+    print("read data from txt...")
     with open(data_withID_filename, "r") as file:
         for line in file:
             word_list = line.split(" ")
-            # word_list[0]: scholarID, word_list[1]: num of vectors
-            dataList.append( int(word_list[1]) )
+            # word_list[0]: scholarID, word_list[1]: num of articles, word_list[-1]: /n
+            if( int( word_list[1] ) > 1):
+                #if (len(word_list) -3 > 10):
+                dataList.append( len(word_list) - 3)
 
+    #all_pmf = sns.histplot(dataList, log_scale=True, stat="density")
     number_of_scholars = len(dataList)
     max_vector = max(dataList)
     dataList = pd.DataFrame(dataList)
     print(dataList.describe())
 
     while(1):
-        # input the number, determine the width of interval
-        interval = (input("Enter a number: "))
+
+        interval = (input("input the number, determine the width of interval: "))
         if ( not interval.isnumeric() ): break
         interval = int(interval)
         number_of_rows = int(max_vector/interval) + 1
@@ -68,11 +73,11 @@ def analysis_vectorLen(data_withID_filename, date):
         title = date + "/pmf_" + str(interval) + "_" + str(probability)
         # title, xlabel, ylabel, x_data, y_data, figureName
         draw_pmf(title, "number of vectors", "number of scholar (%)",df[:pmf_size]['groups'], round(df[:pmf_size]['pmf']*100, 2), title+".png")
-
+        print(title+".png")
         # save to csv
         filename = date + "/pmf_" + str(interval) + ".csv"
         df.to_csv(filename, index=False)
 
-date = "2022-08-03"
+date = "2022-08-14"
 
 analysis_vectorLen(date+"/data_withID.txt", date)
