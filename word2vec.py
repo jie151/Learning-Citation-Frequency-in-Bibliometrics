@@ -50,7 +50,8 @@ def get_scholarData_from_mongoDB(strData_filename, strData_withID_filename, cite
                 record_list.append(len(scholar_profile[0]['citedRecord']))
                 for record in scholar_profile[0]['citedRecord']:
                     updateTime = record['updateTime'].replace("-", "").split()[0] # 2022-05-15 14:20:09 => 20220515
-                    record_list.extend([updateTime, record['cited']['citations']['All']])
+                    citationCount = record['cited']['citations']['All'] if record['cited'] else 0
+                    record_list.extend([updateTime, citationCount])
                 scholarCitedRecord_list.append(record_list)
 
                 data.extend(scholar_profile[0]['personalData']['name'].split())
