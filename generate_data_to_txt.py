@@ -20,7 +20,7 @@ def generate_data_to_txt(vectorWithID_filename, citedRecordWithID_filename):
 
         for index, (each_vector, each_record) in enumerate(zip(vectorFile, recordFile)):
             if index % 5000 == 0 and index > 0:
-                save_to_txt("data_"+ str(n), all_record_vectorList)
+                save_to_txt(date + "/dataRecord_"+ str(n)+".txt", all_record_vectorList)
                 all_record_vectorList = []
             vector = each_vector.split()
             record = each_record.split()
