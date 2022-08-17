@@ -6,17 +6,11 @@ from gensim.models import Word2Vec
 from gensim.models.word2vec import LineSentence
 import datetime
 from langdetect import detect
+from module.save_to_txt import save_to_txt
 
 # connect mongoDB
 cluster = MongoClient("mongodb://localhost:27017/")
 db = cluster["CGUScholar_com"]
-
-def save_to_txt(filename, dataList):
-    with open(filename, 'a', encoding = 'utf-8') as f:
-        for data in dataList:
-            for _data in data :
-                f.write("%s " % _data)
-            f.write("\n")
 
 def get_scholarData_from_mongoDB(strData_filename, strData_withID_filename, citedRecord_withID_filename):
     max_length = 0 # the largest set of vectors
