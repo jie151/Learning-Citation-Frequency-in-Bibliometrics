@@ -1,4 +1,4 @@
-** word2vec.py** : 將資料從mongoDB取出，並做word to vector，會產生6個檔
+word2vec.py **bold** : 將資料從mongoDB取出，並做word to vector，會產生6個檔
     1. citedRecord_withID.txt
         shcolarID + 英文文章數 + 記錄數 + 更新時間0 + 引用次數0 + 更新時間1 + 引用次數1 + ...
     2.  data.txt :
