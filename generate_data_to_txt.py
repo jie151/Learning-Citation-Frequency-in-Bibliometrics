@@ -14,11 +14,11 @@ def generate_data_to_txt(word_or_vector, read_word_or_vector_file, citedRecordWi
     while(n > max):
         n = int(input("the number is too big, input again: "))
 
-    print((recordLen_dataframe[2]>= n).sum())
+    print("scholar: ", (recordLen_dataframe[2]>= n).sum(), "\ncreate file ...")
 
     current_updateTime_index = 3 + 2 * n
-
-    remove_exist_file(filename + str(n)+".txt")
+    filename = filename + str(n)+".txt"
+    remove_exist_file(filename)
 
     with open( read_word_or_vector_file, "r") as vectorFile, open(citedRecordWithID_file, "r") as recordFile :
 
@@ -27,7 +27,7 @@ def generate_data_to_txt(word_or_vector, read_word_or_vector_file, citedRecordWi
         for index, (each_vector, each_record) in enumerate(zip(vectorFile, recordFile)):
 
             if index % 5000 == 0 and index > 0:
-                save_to_txt(filename + str(n)+".txt", all_record_vectorList)
+                save_to_txt(filename, all_record_vectorList)
                 all_record_vectorList = []
             vector = each_vector.split()
             record = each_record.split()
@@ -39,9 +39,9 @@ def generate_data_to_txt(word_or_vector, read_word_or_vector_file, citedRecordWi
                     record_vector = [record[current_updateTime_index],record[current_updateTime_index + 1], is_change]
                     record_vector.extend(vector[word_or_vector:]) # vector file: ID + vectors , word file : ID + num of articles + words
                     all_record_vectorList.append(record_vector)
-        if len(all_record_vectorList) > 0: save_to_txt(filename + str(n)+".txt", all_record_vectorList)
-
-date = "./2022-08-17"
+        if len(all_record_vectorList) > 0: save_to_txt(filename, all_record_vectorList)
+        print(f"{ filename } created")
+date = "./2022-08-15"
 
 word_or_vector = int(input("input 1 or 2 (1: vector for biLSTM, 2: word for bert): "))
 
