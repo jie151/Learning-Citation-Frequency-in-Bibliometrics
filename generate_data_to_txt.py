@@ -1,5 +1,7 @@
+from os import remove
 import pandas as pd
 from module.save_to_txt import save_to_txt
+from module.remove_exist_file import remove_exist_file
 
 # 會去掉 article數 < 1 且 record < 輸入的n的學者
 def generate_data_to_txt(word_or_vector, read_word_or_vector_file, citedRecordWithID_file, filename):
@@ -12,13 +14,18 @@ def generate_data_to_txt(word_or_vector, read_word_or_vector_file, citedRecordWi
     while(n > max):
         n = int(input("the number is too big, input again: "))
 
+    print((recordLen_dataframe[2]>= n).sum())
+
     current_updateTime_index = 3 + 2 * n
+
+    remove_exist_file(filename + str(n)+".txt")
 
     with open( read_word_or_vector_file, "r") as vectorFile, open(citedRecordWithID_file, "r") as recordFile :
 
         all_record_vectorList = []
 
         for index, (each_vector, each_record) in enumerate(zip(vectorFile, recordFile)):
+
             if index % 5000 == 0 and index > 0:
                 save_to_txt(filename + str(n)+".txt", all_record_vectorList)
                 all_record_vectorList = []

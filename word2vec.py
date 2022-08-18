@@ -7,6 +7,7 @@ from gensim.models.word2vec import LineSentence
 import datetime
 from langdetect import detect
 from module.save_to_txt import save_to_txt
+from module.remove_exist_file import remove_exist_file
 
 # connect mongoDB
 cluster = MongoClient("mongodb://localhost:27017/")
@@ -123,10 +124,6 @@ def word_embedding(strData_withID_filename,vector_withID_filename, model):
             all_vectorList.append(vector_list)
 
         save_to_txt(vector_withID_filename, all_vectorList)
-
-def remove_exist_file(filename):
-    if (os.path.exists(filename) and os.path.isfile(filename)):
-        os.remove(filename)
 
 def currentTime():
     now = datetime.datetime.now()
