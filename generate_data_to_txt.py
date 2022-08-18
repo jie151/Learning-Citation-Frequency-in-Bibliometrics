@@ -14,11 +14,13 @@ def generate_data_to_txt(word_or_vector, read_word_or_vector_file, citedRecordWi
     while(n > max):
         n = int(input("the number is too big, input again: "))
 
-    print("scholar: ", (recordLen_dataframe[2]>= n).sum(), "\ncreate file ...")
+    print("scholar: ", (recordLen_dataframe[2]>= n).sum())
 
     current_updateTime_index = 3 + 2 * n
     filename = filename + str(n)+".txt"
     remove_exist_file(filename)
+
+    print("\ncreate file ...")
 
     with open( read_word_or_vector_file, "r") as vectorFile, open(citedRecordWithID_file, "r") as recordFile :
 
