@@ -1,4 +1,3 @@
-from os import remove
 import pandas as pd
 from module.save_to_txt import save_to_txt
 from module.remove_exist_file import remove_exist_file
@@ -11,12 +10,12 @@ def generate_data_to_txt(word_or_vector, read_word_or_vector_file, citedRecordWi
     max = recordLen_dataframe[2].max()
 
     n = int(input("enter an integer, determine which record: "))
-    while(n > max):
-        n = int(input("the number is too big, input again: "))
+    while(n > max or n < 1):
+        n = int(input("the number is should in range(1,{max}), input again: "))
 
-    print("scholar: ", (recordLen_dataframe[2]>= n).sum())
+    print(f"scholar (record>={n}): {(recordLen_dataframe[2]>= n).sum()}")
 
-    current_updateTime_index = 3 + 2 * n
+    current_updateTime_index = 1 + 2 * n
     filename = filename + str(n)+".txt"
     remove_exist_file(filename)
 
@@ -35,10 +34,11 @@ def generate_data_to_txt(word_or_vector, read_word_or_vector_file, citedRecordWi
             record = each_record.split()
             # check ID
             if (vector[0] == record[0]):
-                # check number of record > n and number of
-                if ( int(record[2]) > n and int(record[1]) > 1):
-                    is_change = 1 if (n > 0 and record[current_updateTime_index + 1] != record[current_updateTime_index - 1 ]) or n == 0 else 0
-                    record_vector = [record[current_updateTime_index],record[current_updateTime_index + 1], is_change]
+                # check number of record > n and number of articles
+                if ( int(record[2]) >= n and int(record[1]) > 1):
+                    # 這一次是否有增加，如: n = 2, check n = 2, n = 1時的引用次數
+                    curr_isChange = 1 if (n > 1 and record[current_updateTime_index + 1] != record[current_updateTime_index - 1 ]) or n == 1 else 0
+                    record_vector = [record[0],record[current_updateTime_index],record[current_updateTime_index + 1], curr_isChange]
                     record_vector.extend(vector[word_or_vector:]) # vector file: ID + vectors , word file : ID + num of articles + words
                     all_record_vectorList.append(record_vector)
         if len(all_record_vectorList) > 0: save_to_txt(filename, all_record_vectorList)
