@@ -11,7 +11,7 @@ def generate_data_to_txt(word_or_vector, read_word_or_vector_file, citedRecordWi
 
     n = int(input("enter an integer, determine which record: "))
     while(n > max or n < 1):
-        n = int(input("the number is should in range(1,{max}), input again: "))
+        n = int(input(f"the number is should in range(1,{max})! input again: "))
 
     print(f"scholar (record>={n}): {(recordLen_dataframe[2]>= n).sum()}")
 
