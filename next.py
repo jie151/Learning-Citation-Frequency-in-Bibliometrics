@@ -1,6 +1,14 @@
+#有含label資料，看下次是否真的有更新，如n = 2, 有存n = 3 - n = 2時的引用次數
 import pandas as pd
 from module.save_to_txt import save_to_txt
 from module.remove_exist_file import remove_exist_file
+
+def get_next_record_isChange(record_list, n):
+    next_citation = int(record_list[2*n + 4])
+    current_citation = int(record_list[2*n + 2])
+    isChange = 1 if (next_citation - current_citation != 0) else 0
+    print(f"{record_list[0]}, curr: {current_citation}, next: {next_citation}, isChange:{isChange}")
+    return isChange
 
 # 會去掉 article數 < 1 且 record < 輸入的n的學者
 def generate_data_to_txt(word_or_vector, read_word_or_vector_file, citedRecordWithID_file, filename):
@@ -33,15 +41,16 @@ def generate_data_to_txt(word_or_vector, read_word_or_vector_file, citedRecordWi
             # check ID
             if (vector[0] == record[0]):
                 # check number of record > n and number of articles
-                if ( int(record[2]) >= n and int(record[1]) > 1):
+                if ( int(record[2]) > n and int(record[1]) > 1):
                     i = i + 1
                     # 這一次是否有增加，如: n = 2, check n = 2, n = 1時的引用次數
                     curr_isChange = 1 if (n > 1 and record[current_updateTime_index + 1] != record[current_updateTime_index - 1 ]) or n == 1 else 0
-                    record_vector = [record[0],record[current_updateTime_index],record[current_updateTime_index + 1], curr_isChange]
+                    next_isChange = get_next_record_isChange(record, n) if n > 1 else 1
+                    record_vector = [next_isChange,record[0],record[current_updateTime_index],record[current_updateTime_index + 1], curr_isChange]
                     record_vector.extend(vector[word_or_vector:]) # vector file: ID + vectors , word file : ID + num of articles + words
                     all_record_vectorList.append(record_vector)
-        if len(all_record_vectorList) > 0: save_to_txt(filename, all_record_vectorList)
         print(f"number of scholar: {i}")
+        if len(all_record_vectorList) > 0: save_to_txt(filename, all_record_vectorList)
         print(f"{ filename } created")
 date = "./2022-08-15"
 
