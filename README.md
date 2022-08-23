@@ -10,7 +10,7 @@
 5. w2v_model.model<br>
 6. w2v_vectorTable.txt<br>
 
-**generate_data_to_txt.py** : 得到一筆"data"，輸入1或2決定要產生vector還是word的訓練資料、輸入n決定要哪一筆紀錄，會產生一個檔<br>
+**generate_data_to_txt.py** : 得到一筆"data"，輸入1或2決定要產生vector還是word的訓練資料、輸入n決定要哪一筆紀錄，會產生一個檔(n從1開始)<br>
 1. dataRecord_vector_n.txt :<br>
     更新時間n + 引用次數n + 是否有更新(第0筆預設為1) + vectors<br>
 2. dataRecord_word_n.txt : <br>
