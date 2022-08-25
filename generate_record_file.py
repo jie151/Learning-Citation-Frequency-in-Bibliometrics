@@ -13,6 +13,7 @@ def generate_record_file(read_data_withID_file, filename):
     with open(read_data_withID_file, "r") as file:
         for index, data in enumerate(file):
             if (index % 5000 == 0 and index > 0):
+                print(index)
                 save_to_txt(filename, recordList)
                 recordList = []
             data = data.split(" ")[:2]
