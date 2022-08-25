@@ -22,10 +22,8 @@ def analysis_vectorLen(data_withID_filename, date):
     with open(data_withID_filename, "r") as file:
         for line in file:
             word_list = line.split(" ")
-            # word_list[0]: scholarID, word_list[1]: num of articles, word_list[-1]: /n
-            if( int( word_list[1] ) > 1):
-                #if (len(word_list) -3 > 10):
-                dataList.append( len(word_list) - 3)
+
+            dataList.append( len(word_list) - 2)
 
     #all_pmf = sns.histplot(dataList, log_scale=True, stat="density")
     number_of_scholars = len(dataList)
@@ -78,6 +76,6 @@ def analysis_vectorLen(data_withID_filename, date):
         filename = date + "/pmf_" + str(interval) + ".csv"
         df.to_csv(filename, index=False)
 
-date = "2022-08-15"
+date = "2022-08-23"
 
-analysis_vectorLen(date+"/data_withID.txt", date)
+analysis_vectorLen(date+"/dataRecord_vector_2.txt", date)
