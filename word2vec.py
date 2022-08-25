@@ -13,7 +13,7 @@ from module.remove_exist_file import remove_exist_file
 cluster = MongoClient("mongodb://localhost:27017/")
 db = cluster["CGUScholar_com"]
 
-def get_scholarData_from_mongoDB(strData_filename, strData_withID_filename, citedRecord_withID_filename):
+def get_scholarData_from_mongoDB(strData_filename, strData_withID_filename):
     max_length = 0 # the largest set of vectors
     totalSize = db.articles.estimated_document_count()
     start = 0 # control where MongoDB begins returning results
@@ -28,10 +28,9 @@ def get_scholarData_from_mongoDB(strData_filename, strData_withID_filename, cite
 
         # fetch data from mongoDB
         docs = list(db.articles.find({}).skip(current).limit(slice_size))
-        # slice_size scholars's data/ID/citedRecord
+        # slice_size scholars's data/ID
         collection_dataList = []
         scholarID_list = []
-        scholarCitedRecord_list = []
 
         for doc in docs:
             # a scholar's data
@@ -40,15 +39,6 @@ def get_scholarData_from_mongoDB(strData_filename, strData_withID_filename, cite
             scholar_profile = list(db.cguscholar.find({"_id":doc['_id']}))
 
             if(scholar_profile):
-
-                record_list = []
-                record_list.append(len(scholar_profile[0]['citedRecord']))
-                for record in scholar_profile[0]['citedRecord']:
-                    updateTime = record['updateTime'].replace("-", "").split()[0] # 2022-05-15 14:20:09 => 20220515
-                    citationCount = record['cited']['citations']['All'] if record['cited'] else 0
-                    record_list.extend([updateTime, citationCount])
-                scholarCitedRecord_list.append(record_list)
-
                 data.extend(scholar_profile[0]['personalData']['name'].split())
                 data.extend(scholar_profile[0]['personalData']['university'].split())
                 for label in scholar_profile[0]['personalData']['label']:
@@ -82,9 +72,6 @@ def get_scholarData_from_mongoDB(strData_filename, strData_withID_filename, cite
             collection_dataList.append(data)
 
         save_to_txt(strData_filename, collection_dataList)
-
-        scholarCitedRecord_list = [sID + record for sID, record in zip(scholarID_list, scholarCitedRecord_list)]
-        save_to_txt(citedRecord_withID_filename, scholarCitedRecord_list)
 
         collection_dataList = [sID + collection for sID, collection in zip(scholarID_list,collection_dataList)]
         save_to_txt(strData_withID_filename, collection_dataList)
@@ -134,7 +121,6 @@ date  = currentTime()
 path = "./" + date
 strData_filename = path +"/data.txt"
 strData_withID_filename = path + "/data_withID.txt"
-citedRecord_withID_filename = path + "/citedRecord_withID.txt"
 vector_withID_filename = path + "/vector_withID.txt"
 w2v_model_filename = path + "/w2v_model.model"
 w2v_vectorTable_filename = path + "/w2v_vectorTable.txt"
@@ -145,11 +131,10 @@ if not os.path.isdir(path):
 remove_exist_file(strData_filename)
 remove_exist_file(strData_withID_filename)
 remove_exist_file(vector_withID_filename)
-remove_exist_file(citedRecord_withID_filename)
 
 start_time = time.time()
 
-get_scholarData_from_mongoDB(strData_filename, strData_withID_filename, citedRecord_withID_filename)
+get_scholarData_from_mongoDB(strData_filename, strData_withID_filename)
 execute = (time.time() - start_time)
 print("fetch data from DB : ",time.strftime("%H:%M:%S", time.gmtime(execute)))
 
