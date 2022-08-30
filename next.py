@@ -49,6 +49,8 @@ def generate_data_to_txt(word_or_vector, read_word_or_vector_file, citedRecordWi
                     record_vector = [next_isChange,record[0],record[current_updateTime_index],record[current_updateTime_index + 1], curr_isChange]
                     record_vector.extend(vector[word_or_vector:]) # vector file: ID + vectors , word file : ID + num of articles + words
                     all_record_vectorList.append(record_vector)
+            else :
+                print("error!! ID different")
         print(f"number of scholar: {i}")
         if len(all_record_vectorList) > 0: save_to_txt(filename, all_record_vectorList)
         print(f"{ filename } created")
