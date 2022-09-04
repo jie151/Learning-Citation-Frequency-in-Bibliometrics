@@ -1,21 +1,20 @@
-from tensorflow import keras
 from keras.layers import Dense, LSTM, Bidirectional
 from keras.models import Sequential
-from keras.utils import to_categorical
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.metrics import mean_squared_error
 import pandas as pd
 import numpy
 
 # parameters for LSTM
-nb_lstm_outputs = 1    # 輸出神經元個數
-nb_time_steps = 1    # 時間序列的長度
-nb_input_vectors =  1000 # 每個輸入序列的向量維度
+nb_lstm_outputs = 1         # 輸出神經元個數
+nb_time_steps = 1           # 時間序列的長度
+nb_input_vectors =  1200    # 每個輸入序列的向量維度
 
 def generate_dataframe(filename, each_scholar_vectorLen):
     with open(filename, "r") as file:
         dataList = []
         for index, line in enumerate(file):
+            if index > 10000:
+                break
             data = line.split()
 
             if len(data) > each_scholar_vectorLen:
@@ -27,9 +26,9 @@ def generate_dataframe(filename, each_scholar_vectorLen):
     df = pd.DataFrame(dataList)
     return df
 
-dataframe = generate_dataframe("./dataRecord_vector_2_397.txt", nb_input_vectors)
-label_df= pd.DataFrame(dataframe[0].astype(int)) # label: 例如:第二筆，存第三筆與第二筆資料的引用次是否不同
-dataframe = dataframe.drop(columns=[0, 1]) # 去掉 label(下一次是否跟這次不同), ID
+dataframe = generate_dataframe("./dataRecord_vector_2.txt", nb_input_vectors)
+label_df= pd.DataFrame(dataframe[0].astype(int))
+dataframe = dataframe.drop(columns=[0, 1])
 
 dataset = dataframe.values
 dataset = dataset.astype('float32')
@@ -58,7 +57,7 @@ model = Sequential()
 
 model.add(
     Bidirectional(
-        LSTM(units=64, return_sequences=True),
+        LSTM(units=64, return_sequences=True),#LSTM(units=nb_lstm_outputs, return_sequences=True),
         input_shape=(nb_time_steps, nb_input_vectors,)
     )
 )

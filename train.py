@@ -11,7 +11,7 @@ import subprocess
 nb_lstm_outputs = 1    # 輸出神經元個數
 nb_time_steps = 1    # 時間序列的長度
 nb_input_vectors =  1000 # 每個輸入序列的向量維度
-batch_size = 400
+batch_size = 200
 
 def generate_arrays_from_file(path, batch_size, each_scholar_vectorLen):
     cnt = 0
@@ -79,5 +79,4 @@ execute = (time.time() - start_time)
 print("model fit : ",time.strftime("%H:%M:%S", time.gmtime(execute)))
 print("the number of data: ", fileLine)
 
-
-
+model.save("my_model.h5")
