@@ -7,7 +7,9 @@ import  torch
 import  torch.nn as nn
 import  torch.optim as optim
 import  torch.utils.data as Data
+from module.save_to_txt import save_to_txt
 
+# 創建iterable dateset
 class MyIterableDataset(Data.IterableDataset):
 
     def __init__(self, arg_list):
@@ -16,13 +18,10 @@ class MyIterableDataset(Data.IterableDataset):
         self.batch_size = arg_list["batch_size"]
 
     def __iter__(self):
-        train  = []
-        label  = []
-
         with open(self.filePath, "r") as file:
-
             for index, line in enumerate(file):
-
+                if (index % 5000 == 0):
+                    print(index)
                 data = line.split()
                 label = int(data[0])
 
@@ -33,36 +32,32 @@ class MyIterableDataset(Data.IterableDataset):
                     data.extend([0]*(self.each_scholar_vectorLen - len(data) + 2))
 
                 train = [data[2:]] # data[0] : label, data[1] : ID
-
                 train = np.array(train)
                 label = np.array(label)
-
                 train = train.astype("float32")
-
                 #print(f"{data[1]} train.shape: {train.shape}, label.shape: {label.shape} ")
 
                 train = torch.tensor(train)
                 label = torch.tensor(label)
                 yield(train, label)
 
-
-each_scholar_vectorLen = 1000
-batch_size = 10
-arg_list =  {"path": "dataRecord_vector_2_397.txt", "each_scholar_vectorLen": each_scholar_vectorLen, "batch_size": batch_size}
-
-
-input_features = 1000 # the number of expected features in the input x
-hidden_feature_dim = 50 # the number of features in the hidden state
-lstm_layer_num = 3 # number of recurrent layers
-output_dim = 1
-
+batch_size = 100
+input_features = 1200   # the number of expected features in the input x
+hidden_feature_dim = 100 # the number of features in the hidden state
+lstm_layer_num = 3      # number of recurrent layers
+output_dim = 1          # model's output
+num_epochs = 100
+filename = "../../biLSTM/code/dataRecord_vector_2.txt"
+#filename = "./dataRecord_vector_2_397.txt"
+fileLine = subprocess.getstatusoutput(f"wc -l {filename}")[1].split()[0]
+print("file: ", fileLine)
+arg_list =  {"path": filename, "each_scholar_vectorLen": input_features, "batch_size": batch_size}
 class BiLSTM(nn.Module):
     def __init__(self):
         super(BiLSTM, self).__init__()
 
         self.lstm = nn.LSTM(input_size = input_features, hidden_size =  hidden_feature_dim, num_layers = lstm_layer_num,
                             bidirectional=True) # input, output: ( seq, batch_size, feature)
-
         # fully connected layer
         self.fc = nn.Linear(hidden_feature_dim*2, output_dim)
 
@@ -75,40 +70,56 @@ class BiLSTM(nn.Module):
         hidden_state=torch.randn(lstm_layer_num * 2, batch_size, hidden_feature_dim)    # [num_layers * num_directions, batch, hidden_size]
         cell_state  =torch.randn(lstm_layer_num * 2, batch_size, hidden_feature_dim)    # [num_layers * num_directions, batch, hidden_size]
 
-        outputs, (h_n, c_n) = self.lstm(input, (hidden_state, cell_state))
+        model_out, (h_n, c_n) = self.lstm(input, (hidden_state, cell_state))
+        #print(model_out.shape) (1, 10:batch, 100:feature)
+        output = self.fc(model_out[-1,:,:])
+        #model_out = model_out[-1]  # [batch_size, hidden_feature_dim * 2]
+        #output = self.fc(model_out)  # model : [batch_size, seq]
+        return output
 
-        outputs = outputs[-1]  # [batch_size, hidden_feature_dim * 2]
-
-        model = self.fc(outputs)  # model : [batch_size, seq]
-
-        return model
 model = BiLSTM()
-criterion = nn.MSELoss()
+criterion = nn.MSELoss() # mean squared error : input x and target y.
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
+def train(num_epochs):
 
-for epoch in range(100):
-    train_set = MyIterableDataset(arg_list)
-    loader = Data.DataLoader(train_set, batch_size = 10)
+    for epoch in range(num_epochs):
+        train_set = MyIterableDataset(arg_list)
+        loader = Data.DataLoader(train_set, batch_size = 10, shuffle=False)
+        accuracy = 0
 
-    for x, y in loader:
+        for data, label in loader:
 
-        pred = model(x)
+            model_output = model(data)
+            #if model_output > 0.5, result = 1, else: 0
+            result = (model_output > 0.5).float()
+            label = label.to(torch.float32)
 
-        #pred = pred.to(torch.float32)
+            # 將tensor -> list, 存預測值與label
+            x = result.tolist()
+            y = label.tolist()
 
-        y = y.to(torch.float32)
+            for _model_out, _label, _result in zip(model_output, label, result):
+                #print(_model_out, _result, _label)
+                if (_label == _result):
+                    accuracy += 1
 
-        #for x_, y_ in zip(pred, y):
-           #print(x_, " ", y_)
+            x_y_list = [tmpX + [tmpY] for tmpX, tmpY in zip(x, y)]
+            save_to_txt("myfile.txt", x_y_list)
+            # 計算loss
+            loss = criterion(model_output, label)
 
-        loss = criterion(pred, y)
+            optimizer.zero_grad() # 將梯度歸0
+            loss.backward() # 反向傳播計算每個參數的梯度值
+            optimizer.step() # 用梯度下降來更新參數值 # 參考:https://blog.csdn.net/PanYHHH/article/details/107361827
+            #print(loss)
 
-        #if (epoch + 1) % 10 == 0:
-        print('Epoch:', '%04d' % (epoch + 1), 'cost =', '{:.6f}'.format(loss))
+        epoch_accuracy = round(accuracy*100/int(fileLine), 3)
+        print(accuracy)
 
-        optimizer.zero_grad() # 將梯度歸0
-        loss.backward() # 反向傳播計算每個參數的梯度值
-        optimizer.step() # 用梯度下降來更新參數值 # 參考:https://blog.csdn.net/PanYHHH/article/details/107361827
+        print(f"Eopch {epoch}/{num_epochs}, Loss: { '{:.3f}'.format(loss) }, Accuracy: {epoch_accuracy}%")
 
-
+start_time = time.time()
+train(num_epochs)
+execute = (time.time() - start_time)
+print("train model : ",time.strftime("%H:%M:%S", time.gmtime(execute)))
