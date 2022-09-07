@@ -37,7 +37,7 @@ def generate_record_file(read_data_withID_file, filename):
             recordList.append(data)
         if(len(recordList) > 0): save_to_txt(filename, recordList)
 
-date = "./2022-08-15"
+date = "./2022-08-26"
 read_data_withID_file = date + "/data_withID.txt"
 filename = date + "/citedRecord_withID_add.txt"
 

@@ -52,7 +52,7 @@ def generate_data_to_txt(word_or_vector, read_word_or_vector_file, citedRecordWi
         print(f"number of data: {cnt}")
         if len(all_record_vectorList) > 0: save_to_txt(filename, all_record_vectorList)
         print(f"{ filename } created")
-date = "./2022-08-15"
+date = "./2022-08-26"
 
 word_or_vector = int(input("input 1 or 2 (1: vector for biLSTM, 2: word for bert): "))
 

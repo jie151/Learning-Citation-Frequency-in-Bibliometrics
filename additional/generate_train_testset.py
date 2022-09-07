@@ -57,7 +57,7 @@ def generate_data_to_txt(word_or_vector, read_word_or_vector_file, citedRecordWi
         print(f"trainset: {train_cnt}, testset: {test_cnt}")
         print(f"{ trainsetFile } created")
         print(f"{ testsetFile } created")
-date = "./2022-08-15"
+date = "./2022-08-26"
 
 word_or_vector = int(input("input 1 or 2 (1: vector for biLSTM, 2: word for bert): "))
 
