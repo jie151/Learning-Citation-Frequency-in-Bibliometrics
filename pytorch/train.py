@@ -9,6 +9,21 @@ import  torch.optim as optim
 import  torch.utils.data as Data
 from module.save_to_txt import save_to_txt
 
+# config
+batch_size = 100
+input_features = 1200   # the number of expected features in the input x
+hidden_feature_dim = 32 # the number of features in the hidden state
+lstm_layer_num = 4      # number of recurrent layers
+output_dim = 1          # model's output
+num_epochs = 10
+trainFile= "./dataRecord_vector_2_397.txt"
+testFile = "./dataRecord_vector_2_397.txt"
+trainset_num = subprocess.getstatusoutput(f"wc -l {trainFile}")[1].split()[0]
+testset_num = subprocess.getstatusoutput(f"wc -l {trainFile}")[1].split()[0]
+print(f"train: {trainset_num}, test: {testset_num} ")
+train_arg_list =  {"path": trainFile, "each_scholar_vectorLen": input_features, "batch_size": batch_size}
+test_arg_list = {"path": testFile, "each_scholar_vectorLen": input_features, "batch_size": batch_size}
+
 # 創建iterable dateset
 class MyIterableDataset(Data.IterableDataset):
 
@@ -41,17 +56,6 @@ class MyIterableDataset(Data.IterableDataset):
                 label = torch.tensor(label)
                 yield(train, label)
 
-batch_size = 100
-input_features = 1200   # the number of expected features in the input x
-hidden_feature_dim = 32 # the number of features in the hidden state
-lstm_layer_num = 3      # number of recurrent layers
-output_dim = 1          # model's output
-num_epochs = 100
-filename = "../../biLSTM/code/dataRecord_vector_2.txt"
-#filename = "./dataRecord_vector_2_397.txt"
-fileLine = subprocess.getstatusoutput(f"wc -l {filename}")[1].split()[0]
-print("file: ", fileLine)
-arg_list =  {"path": filename, "each_scholar_vectorLen": input_features, "batch_size": batch_size}
 class BiLSTM(nn.Module):
     def __init__(self):
         super(BiLSTM, self).__init__()
@@ -82,10 +86,10 @@ criterion = nn.MSELoss() # mean squared error : input x and target y.
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
 def train(num_epochs):
-
+    model.train()
     for epoch in range(num_epochs):
-        train_set = MyIterableDataset(arg_list)
-        loader = Data.DataLoader(train_set, batch_size = 10, shuffle=False)
+        train_set = MyIterableDataset(train_arg_list)
+        loader = Data.DataLoader(train_set, batch_size = 10) #shuffle=False)
         accuracy = 0
 
         for data, label in loader:
@@ -105,7 +109,7 @@ def train(num_epochs):
                     accuracy += 1
 
             x_y_list = [tmpX + [tmpY] for tmpX, tmpY in zip(x, y)]
-            save_to_txt("myfile.txt", x_y_list)
+            #save_to_txt("myfile.txt", x_y_list)
             # 計算loss
             loss = criterion(model_output, label)
 
@@ -113,11 +117,51 @@ def train(num_epochs):
             loss.backward() # 反向傳播計算每個參數的梯度值
             optimizer.step() # 用梯度下降來更新參數值 # 參考:https://blog.csdn.net/PanYHHH/article/details/107361827
             #print(loss)
-        epoch_accuracy = round(accuracy*100/int(fileLine), 3)
+        epoch_accuracy = round(accuracy*100/int(trainset_num), 3)
         print(accuracy)
         print(f"Eopch {epoch+1}/{num_epochs}, Loss: { '{:.3f}'.format(loss) }, Accuracy: {epoch_accuracy}%")
+
+def test(model):
+    model.eval()
+    accuracy = 0
+
+    testset = MyIterableDataset(test_arg_list)
+    loader = Data.DataLoader(testset, batch_size = 10, shuffle=False)
+    with torch.no_grad():
+        for data, label in loader:
+            model_out = model(data)
+            #if model_output > 0.5, result = 1, else: 0
+            result = (model_out > 0.5).float()
+            label = label.to(torch.float32)
+
+            # 將tensor -> list, 存預測值與label
+            x = result.tolist()
+            y = label.tolist()
+
+            for _model_out, _label, _result in zip(model_out, label, result):
+                #print(_model_out, _result, _label)
+                if (_label == _result):
+                    accuracy += 1
+
+            x_y_list = [tmpX + [tmpY] for tmpX, tmpY in zip(x, y)]
+            #save_to_txt("myfile.txt", x_y_list)
+            # 計算loss
+            loss = criterion(model_out, label)
+    print (accuracy)
+    accuracy = round(accuracy*100/int(testset_num), 3)
+    print(f"test\nLoss: { '{:.3f}'.format(loss) }, Accuracy: {accuracy}%")
 
 start_time = time.time()
 train(num_epochs)
 execute = (time.time() - start_time)
 print("train model : ",time.strftime("%H:%M:%S", time.gmtime(execute)))
+
+modelName = "model_state_dict.pt"
+torch.save(model.state_dict(), modelName)
+print(f"save model's parameter: {modelName}")
+
+# Load model
+load_model = BiLSTM()
+load_model.load_state_dict(torch.load(modelName))
+
+test(load_model)
