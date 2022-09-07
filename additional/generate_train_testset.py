@@ -25,10 +25,12 @@ def generate_data_to_txt(word_or_vector, read_word_or_vector_file, citedRecordWi
         all_record_vectorList = []
         all_testsetList = []
         for index, (each_vector, each_record) in enumerate(zip(vectorFile, recordFile)):
+
             if index % 3000 == 0 and index > 0: # 每3000名學者就存起來
                 save_to_txt(trainsetFile, all_record_vectorList)
                 save_to_txt(testsetFile, all_testsetList)
                 all_record_vectorList = []
+                all_testsetList = []
             vector = each_vector.split()
             record = each_record.split()
             # 判斷ID是否相同與record的長度是否大於2，可能有article有，但cguscholar沒有的情況
