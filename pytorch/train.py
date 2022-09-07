@@ -43,7 +43,7 @@ class MyIterableDataset(Data.IterableDataset):
 
 batch_size = 100
 input_features = 1200   # the number of expected features in the input x
-hidden_feature_dim = 100 # the number of features in the hidden state
+hidden_feature_dim = 32 # the number of features in the hidden state
 lstm_layer_num = 3      # number of recurrent layers
 output_dim = 1          # model's output
 num_epochs = 100
@@ -113,11 +113,9 @@ def train(num_epochs):
             loss.backward() # 反向傳播計算每個參數的梯度值
             optimizer.step() # 用梯度下降來更新參數值 # 參考:https://blog.csdn.net/PanYHHH/article/details/107361827
             #print(loss)
-
         epoch_accuracy = round(accuracy*100/int(fileLine), 3)
         print(accuracy)
-
-        print(f"Eopch {epoch}/{num_epochs}, Loss: { '{:.3f}'.format(loss) }, Accuracy: {epoch_accuracy}%")
+        print(f"Eopch {epoch+1}/{num_epochs}, Loss: { '{:.3f}'.format(loss) }, Accuracy: {epoch_accuracy}%")
 
 start_time = time.time()
 train(num_epochs)
