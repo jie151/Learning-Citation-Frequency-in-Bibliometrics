@@ -144,7 +144,10 @@ model = train_W2V_model(strData_filename, w2v_model_filename, w2v_vectorTable_fi
 execute = (time.time() - start_time)
 print("train model : ",time.strftime("%H:%M:%S", time.gmtime(execute)))
 
+remove_exist_file(strData_filename)
+
 start_time = time.time()
 word_embedding(strData_withID_filename,vector_withID_filename, model)
 execute = (time.time() - start_time)
 print("word embedding : ",time.strftime("%H:%M:%S", time.gmtime(execute)))
+
