@@ -45,4 +45,4 @@ remove_exist_file(filename)
 
 print("create file...")
 generate_record_file(read_data_withID_file, filename)
-print("create ", filename_only)
+print(filename, " created")
