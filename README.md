@@ -17,4 +17,15 @@
 
 **generate_record_file.py** : 產生每個學者的紀錄檔<br>
 1. citedRecord_withID.txt : <br>
-    ID + 英文論文數 + 有幾筆紀錄 +[ 第 1 筆更新時間 + 第 1 筆的引用次數 ] + [ 第 2 筆更新時間 + 第 2 筆的引用次數 ] + ... + [ 第 n 筆更新時間 + 第 n 筆的引用次數 ]<br>
+    ID + 英文論文數 + 有幾筆紀錄 +[ 第 1 筆更新時間 + 引用次數 ] + [ 第 2 筆更新時間 + 引用次數 ] + ... + [ 第 n 筆更新時間 + 引用次數 ]<br>
+
+**generate_record_file_add.py** : 產生每個學者的紀錄檔，包含h_index, i10_index<br>
+1. citedRecord_withID_add.txt<br>
+    ID + 英文論文數 + 有幾筆紀錄 +[ 第 1 筆更新時間 + 引用次數 + h_index, i10_index ] + [ 第 2 筆更新時間 + 引用次數 + h_index, i10_index ] + ... + [ 第 n 筆更新時間 + 引用次數 + h_index, i10_index ]<br>
+
+**generate_data_to_txt_add.py**: 產生每個學者的"data"，輸入1或2決定要產生vector還是word的訓練資料 (包含h_index, i10_index)<br>
+
+**generate_train_testset.py** : 將資料分成訓練集與測試集，測試集資料為每個學者的倒數第2筆data<br>
+例如:某學者有5筆紀錄，則第1, 2, 3筆紀錄會進到訓練集、第4筆紀錄會進到測試集<br>
+1. /trainset_dataRecord_word_add.txt
+2. /testset_dataRecord_word_add.txt
