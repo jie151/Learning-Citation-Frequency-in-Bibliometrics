@@ -1,6 +1,7 @@
 from    math import ceil
 import  numpy as np
 #from    sklearn.preprocessing import MinMaxScaler
+from sklearn.cross_validation import StratifiedKFold
 import  subprocess
 import  time
 import  torch
@@ -10,16 +11,16 @@ import  torch.utils.data as Data
 from module.save_to_txt import save_to_txt
 
 # config
-batch_size = 100
+batch_size = 16
 input_features = 1200   # the number of expected features in the input x
 hidden_feature_dim = 32 # the number of features in the hidden state
 lstm_layer_num = 4      # number of recurrent layers
 output_dim = 1          # model's output
 num_epochs = 10
-trainFile= "./dataRecord_vector_2_397.txt"
-testFile = "./dataRecord_vector_2_397.txt"
+trainFile= "../../../word_embedding_env/w2v/2022-08-26/trainset_dataRecord_vector_add.txt"
+testFile = "../../../word_embedding_env/w2v/2022-08-26/testset_dataRecord_vector_add.txt"
 trainset_num = subprocess.getstatusoutput(f"wc -l {trainFile}")[1].split()[0]
-testset_num = subprocess.getstatusoutput(f"wc -l {trainFile}")[1].split()[0]
+testset_num = subprocess.getstatusoutput(f"wc -l {testFile}")[1].split()[0]
 print(f"train: {trainset_num}, test: {testset_num} ")
 train_arg_list =  {"path": trainFile, "each_scholar_vectorLen": input_features, "batch_size": batch_size}
 test_arg_list = {"path": testFile, "each_scholar_vectorLen": input_features, "batch_size": batch_size}
@@ -35,8 +36,6 @@ class MyIterableDataset(Data.IterableDataset):
     def __iter__(self):
         with open(self.filePath, "r") as file:
             for index, line in enumerate(file):
-                if (index % 5000 == 0):
-                    print(index)
                 data = line.split()
                 label = int(data[0])
 
@@ -89,9 +88,9 @@ def train(num_epochs):
     model.train()
     for epoch in range(num_epochs):
         train_set = MyIterableDataset(train_arg_list)
-        loader = Data.DataLoader(train_set, batch_size = 10) #shuffle=False)
+        loader = Data.DataLoader(train_set, batch_size = batch_size, shuffle=False)
         accuracy = 0
-
+        loss_epoch = 0
         for data, label in loader:
 
             model_output = model(data)
@@ -112,21 +111,21 @@ def train(num_epochs):
             #save_to_txt("myfile.txt", x_y_list)
             # 計算loss
             loss = criterion(model_output, label)
-
+            loss_epoch += loss
             optimizer.zero_grad() # 將梯度歸0
             loss.backward() # 反向傳播計算每個參數的梯度值
             optimizer.step() # 用梯度下降來更新參數值 # 參考:https://blog.csdn.net/PanYHHH/article/details/107361827
-            #print(loss)
-        epoch_accuracy = round(accuracy*100/int(trainset_num), 3)
-        print(accuracy)
-        print(f"Eopch {epoch+1}/{num_epochs}, Loss: { '{:.3f}'.format(loss) }, Accuracy: {epoch_accuracy}%")
+
+        accuracy_epoch = round(accuracy*100/int(trainset_num), 3)
+        loss_epoch = loss+epoch/int(trainset_num)
+        print(f"Eopch {epoch+1}/{num_epochs}, Loss: { '{:.3f}'.format(loss_epoch) }, Accuracy: {accuracy_epoch}%")
 
 def test(model):
     model.eval()
     accuracy = 0
-
+    loss = 0
     testset = MyIterableDataset(test_arg_list)
-    loader = Data.DataLoader(testset, batch_size = 10, shuffle=False)
+    loader = Data.DataLoader(testset, batch_size = batch_size, shuffle=False)
     with torch.no_grad():
         for data, label in loader:
             model_out = model(data)
@@ -146,8 +145,9 @@ def test(model):
             x_y_list = [tmpX + [tmpY] for tmpX, tmpY in zip(x, y)]
             #save_to_txt("myfile.txt", x_y_list)
             # 計算loss
-            loss = criterion(model_out, label)
-    print (accuracy)
+            loss += criterion(model_out, label)
+
+    loss = loss/int(testset_num)
     accuracy = round(accuracy*100/int(testset_num), 3)
     print(f"test\nLoss: { '{:.3f}'.format(loss) }, Accuracy: {accuracy}%")
 
