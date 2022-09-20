@@ -60,7 +60,7 @@ def get_scholarData_from_mongoDB(strData_filename, strData_withID_filename):
 
             data = [re.sub("[^a-zA-Z0-9]+", "", w) for w in data]   # remove non english characters
             data = [w.lower() for w in data]                        # convert all characters to lowercase
-            data = list(set(data))                                  # remove duplicates
+            #data = list(set(data))                                  # remove duplicates
             data = list(filter(None, data))                         # remove empty string ''
 
             scholarID_list.append([doc['_id'], len(doc['Articles']) - not_ENarticle])

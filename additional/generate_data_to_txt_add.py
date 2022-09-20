@@ -8,7 +8,8 @@ def get_next_record_isChange(record_list, n):
     next_citation = int(record_list[4*n + 4])
     current_citation = int(record_list[4*n])
     isChange = 1 if (next_citation - current_citation != 0) else 0
-    #print(f"{record_list[0]}, curr: {current_citation}, next: {next_citation}, isChange:{isChange}")
+    if isChange == 1:
+        print(f"{record_list[0]}, curr: {current_citation}, next: {next_citation}, isChange:{isChange}")
     return isChange
 
 # 會去掉 article數 < 1 且 record < 輸入的n的學者
