@@ -7,7 +7,7 @@ from   sklearn.preprocessing import MinMaxScaler
 from   module.save_to_txt import save_to_txt
 
 # config
-batch_size = 32
+batch_size = 10
 input_features = 800   # the number of expected features in the input x
 hidden_feature_dim = 512 # the number of features in the hidden state
 model_layer_num = 8     # number of recurrent layers
@@ -15,10 +15,11 @@ output_dim = 1          # model's output
 epochs_num = 10
 kFolds_num = 5
 learningRate = 0.01
-
+subDataset_size = 10
+dropout = 0.5
 # 設定訓練檔與測試檔
-trainFile= "./random_balance_dupli.txt"
-testFile = "./random_balance_dupli.txt"
+trainFile= "./random_balance_10.txt"
+testFile = "./random_balance_10.txt"
 trainset_num = subprocess.getstatusoutput(f"wc -l {trainFile}")[1].split()[0]
 testset_num = subprocess.getstatusoutput(f"wc -l {testFile}")[1].split()[0]
 print(f"train: {trainset_num}, test: {testset_num} ")
@@ -57,6 +58,7 @@ class MyIterableDataset(torch.utils.data.IterableDataset):
                 train = np.array(train)
                 label = np.array(label)
                 train = train.astype("float32")
+
                 # 正規化
                 scaler = MinMaxScaler(feature_range=(0, 1))
                 train_scaled = scaler.fit_transform(train.reshape(self.each_scholar_vectorLen, -1))
@@ -78,7 +80,7 @@ class BiLSTM(torch.nn.Module):
                                   #bias = False) # input, output: (seq, batch_size, feature)
         # fully connected layer
         self.fc =torch.nn.Linear(hidden_feature_dim*2, output_dim)
-
+        self.Dropout = torch.nn.Dropout(dropout)
         self.sigmoid = torch.nn.Sigmoid()
         self.tanh = torch.nn.Tanh()
 
@@ -115,7 +117,7 @@ def train_model(model, epochs_num, batch_size, criterion, optimizer):
     for epoch in range(epochs_num):
         # 批次從檔案中拿出一部分的資料作為dataset
         dataset = MyIterableDataset(train_arg_list)
-        loader = torch.utils.data.DataLoader(dataset, batch_size = 3000, shuffle=False)
+        loader = torch.utils.data.DataLoader(dataset, batch_size = subDataset_size, shuffle=False)
 
         for data_subset, label_subset in loader:
             data_label_subset = MyDataset(data_subset, label_subset)
