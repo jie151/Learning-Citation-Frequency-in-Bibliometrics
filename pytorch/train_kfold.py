@@ -6,24 +6,20 @@ from   sklearn.model_selection import StratifiedKFold
 from   sklearn.preprocessing import MinMaxScaler
 
 # config
-modelLayerNum = 6        # number of recurrent layers
-batchSize = 32
-datasetSize = 2000         # 一次抽多少做kfold
-inputFeatures = 1200     # the number of expected features in the input x
-hiddenFeatureDim = 1024  # the number of features in the hidden state
-outputDim = 1            # model's output
-epochNum = 10
-kFoldNum = 5
-learningRate = 0.001
-dropout = 0.5
+var_model_layer_num = 4         # number of recurrent layers
+var_batch_size = 32
+var_dataset_size = 2000         # 一次抽多少做kfold
+var_input_features_num = 1200       # the number of expected features in the input x
+var_hidden_features_num = 1024   # the number of features in the hidden state
+var_output_dim = 1              # model's output
+var_epoch_num = 10
+var_kFold = 5
+var_learning_rate = 0.001
+var_dropout = 0.5
 
 # 設定訓練檔與測試檔
-trainFile= "./random_balance_10.txt"
-testFile = "./random_balance_10.txt"
-#trainFile_num = subprocess.getoutput(f"wc -l {trainFile}")[1].split()[0]
-testsetNum = subprocess.getstatusoutput(f"wc -l {testFile}")[1].split()[0]
-train_arg_list =  {"path": trainFile, "each_scholar_vectorLen": inputFeatures}
-test_arg_list = {"path": testFile, "each_scholar_vectorLen": inputFeatures}
+var_trainset_file= "./random_balance_10.txt"
+var_testset_file = "./random_balance_10.txt"
 
 # 將向量與label再合成dataset
 class MyDataset(torch.utils.data.Dataset):
@@ -37,13 +33,13 @@ class MyDataset(torch.utils.data.Dataset):
 
 # Create Iterable dataset
 class MyIterableDataset(torch.utils.data.IterableDataset):
-    def __init__(self, arg_list):
-        self.filePath = arg_list["path"]
-        self.each_scholar_vectorLen = arg_list["each_scholar_vectorLen"]
+    def __init__(self, file_path, each_scholar_vectorLen):
+        self.file_path = file_path
+        self.each_scholar_vectorLen = each_scholar_vectorLen
 
     def __iter__(self):
-        with open(self.filePath, "r") as file:
-            for index, line in enumerate(file):
+        with open(self.file_path, "r") as file:
+            for line in file:
 
                 data = line.split()
                 label = int(data[0])
@@ -67,17 +63,17 @@ class BiLSTM(torch.nn.Module):
     def __init__(self):
         super(BiLSTM, self).__init__()
 
-        self.lstm = torch.nn.LSTM(input_size = inputFeatures,
-                                  hidden_size =  hiddenFeatureDim,
-                                  num_layers = modelLayerNum,
+        self.lstm = torch.nn.LSTM(input_size = var_input_features_num,
+                                  hidden_size =  var_hidden_features_num,
+                                  num_layers = var_model_layer_num,
                                   bidirectional=True,
-                                  dropout = dropout,
-                                  bias = True) # input, output: (seq, batch_size, feature)
+                                  dropout = var_dropout,
+                                  bias = True)
         # fully connected layer
-        self.fc = torch.nn.Sequential(torch.nn.Dropout(dropout),
-                                      torch.nn.Linear(hiddenFeatureDim*2, 256),
-                                      torch.nn.Linear(256, outputDim),
-                                      torch.nn.Tanh()) # Tanh
+        self.fc = torch.nn.Sequential(torch.nn.Dropout(var_dropout),
+                                      torch.nn.Linear(var_hidden_features_num*2, 256),
+                                      torch.nn.Linear(256, var_output_dim),
+                                      torch.nn.Tanh())
         self.sigmoid = torch.nn.Sigmoid()
 
     def forward(self, X):
@@ -85,8 +81,8 @@ class BiLSTM(torch.nn.Module):
         batch_size = X.shape[0]
         input = X.transpose(0, 1)
 
-        hidden_state=torch.randn(modelLayerNum * 2, batch_size, hiddenFeatureDim) # [num_layers * num_directions, batch, hidden_size]
-        cell_state  =torch.randn(modelLayerNum * 2, batch_size, hiddenFeatureDim) # [num_layers * num_directions, batch, hidden_size]
+        hidden_state=torch.randn(var_model_layer_num * 2, batch_size, var_hidden_features_num) # [num_layers * num_directions, batch, hidden_size]
+        cell_state  =torch.randn(var_model_layer_num * 2, batch_size, var_hidden_features_num) # [num_layers * num_directions, batch, hidden_size]
 
         model_out, (h_n, c_n) = self.lstm(input, (hidden_state, cell_state))
 
@@ -100,40 +96,32 @@ class BiLSTM(torch.nn.Module):
 
         return out
 
-# 計算準確率
-def count_accuracy(outputs, labels):
-    count = 0
-    outputs = (outputs >= 0.5).float()
-    for out, lab in zip(outputs, labels):
-        if (out == lab):
-            count += 1
-    return count
+def data_min_max_scaler(data):
+    scaler = MinMaxScaler(feature_range=(0, 1))
+    nsamples, nx, ny = data.shape
+    dim2_data = data.reshape((nsamples, nx*ny))
+    data_scaled = scaler.fit_transform(dim2_data)
+    data_scaled = data_scaled.reshape(nsamples, nx, ny)
+    data_scaled = torch.tensor(data_scaled)
 
-def train_model(model, criterion, optimizer):
+    return data_scaled.float()
+
+def train_model(model, criterion, optimizer, trainset_file):
     # Defind the k-fold cross validator
-    kFold = StratifiedKFold(n_splits = kFoldNum, random_state=202, shuffle=True)
+    kFold = StratifiedKFold(n_splits = var_kFold, random_state=202, shuffle=True)
 
-    for epoch in range(epochNum):
+    for epoch in range(var_epoch_num):
         # 批次從檔案中拿出一部分的資料作為dataset
-        dataset = MyIterableDataset(train_arg_list)
-        loader = torch.utils.data.DataLoader(dataset, batch_size = datasetSize, shuffle=False)
+        dataset = MyIterableDataset(trainset_file, var_input_features_num)
+        dataset_loader = torch.utils.data.DataLoader(dataset, batch_size = var_dataset_size, shuffle=False)
 
-        for data_subset, label_subset in loader:
-            # 正規化
-            scaler = MinMaxScaler(feature_range=(0, 1))
-            nsamples, nx, ny = data_subset.shape
-
-            dim2_inputs = data_subset.reshape((nsamples, nx*ny))
-            inputs_scaled = scaler.fit_transform(dim2_inputs)
-            dim3_inputs = inputs_scaled.reshape(nsamples, nx, ny)
-            dim3_inputs = torch.tensor(dim3_inputs)
-            data_subset = dim3_inputs.float()
-
-
+        for data_subset, label_subset in dataset_loader:
+            # MinMaxScaler
+            data_subset = data_min_max_scaler(data_subset)
             data_label_subset = MyDataset(data_subset, label_subset)
-            all_fold_accuracy = {}
 
-            print(f"--------\nepoch: {epoch+1}/{epochNum}")
+            all_fold_accuracy = {}
+            print(f"--------\nepoch: {epoch+1}/{var_epoch_num}")
             for fold, (train_indexs, valid_indexs) in enumerate(kFold.split(data_subset, label_subset)):
                 print(f"train/valid size: {len(train_indexs)}/{len(valid_indexs)}")
 
@@ -142,94 +130,79 @@ def train_model(model, criterion, optimizer):
                 valid_subsampler = torch.utils.data.SubsetRandomSampler(valid_indexs)
 
                 # Define data loaders for training and validating data in this fold
-                trainLoader = torch.utils.data.DataLoader(data_label_subset, batch_size = batchSize, sampler=train_subsampler)#, shuffle=False)
-                validLoader = torch.utils.data.DataLoader(data_label_subset, batch_size = batchSize, sampler=valid_subsampler) #shuffle=False)
+                trainLoader = torch.utils.data.DataLoader(data_label_subset, batch_size = var_batch_size, sampler=train_subsampler)
+                validLoader = torch.utils.data.DataLoader(data_label_subset, batch_size = var_batch_size, sampler=valid_subsampler)
 
                 # Set loss, accuracy value
                 loss_fold     = 0
                 accuracy_fold = 0
-                count = 0
+
                 # Iterate over the DataLoader for training data
                 for inputs, labels in trainLoader:
-                    count += 1
-                    #print(inputs)
-                    optimizer.zero_grad() # Zero the gradients
+                    # Zero the gradients
+                    optimizer.zero_grad()
 
                     model.train()
-
                     model_out = model(inputs)
 
-                    # 計算準確率
-                    tempOut = (model_out >= 0.5).float()
-                    accuracy_fold += (tempOut == labels).sum().item()
+                    temp = (model_out >= 0.5).float()
+                    accuracy_fold += (temp == labels).sum().item()
 
                     loss = criterion(model_out, labels.float())
-
                     loss_fold += loss
-
-                    loss.backward() # 反向傳播計算每個參數的梯度值
-                    optimizer.step() # 用梯度下降來更新參數值 # 參考:https://blog.csdn.net/PanYHHH/article/details/107361827
+                    # 反向傳播計算每個參數的梯度值
+                    loss.backward()
+                    # 用梯度下降來更新參數值 # 參考:https://blog.csdn.net/PanYHHH/article/details/107361827
+                    optimizer.step()
 
                 # 一個fold的準確率與loss
                 accuracy_fold = round(accuracy_fold*100/len(train_indexs), 3)
-                loss_fold = loss_fold/count
+                loss_fold = loss_fold/len(train_indexs)
 
-
-                print(f"fold {fold+1}/{kFoldNum}, Loss: { '{:.3f}'.format(loss_fold) }, Accuracy: {accuracy_fold}%")
+                print(f"fold {fold+1}/{var_kFold}, Loss: { '{:.3f}'.format(loss_fold) }, Accuracy: {accuracy_fold}%")
 
                 # validation theis fold
                 with torch.no_grad():
                     correct = 0
-                    for valid_inputs, label in validLoader:
+                    for valid_inputs, valid_labels in validLoader:
                         model_out = model(valid_inputs)
-
-                        correct += count_accuracy(model_out, label.float())
+                        temp = (model_out >= 0.5).float()
+                        correct += (temp == valid_labels).sum().item()
                     all_fold_accuracy[fold] = 100.0 * (correct/len(valid_indexs))
-            print(f"********\nKFold cross validation results {kFoldNum} folds")
+            print(f"********\nKFold cross validation results {var_kFold} folds")
             sum = 0.0
             for key, value in all_fold_accuracy.items():
                 print(f"fold {key+1}: {round(value, 3)} %")
                 sum += value
             print(f"average: {round(sum/len(all_fold_accuracy.items()),3)} %\n")
 
-def test_model(model, criterion):
+def test_model(model, criterion, testset_file):
     model.eval()
     accuracy = 0
     loss = 0
-    testset = MyIterableDataset(test_arg_list)
-    loader = torch.utils.data.DataLoader(testset, batch_size = batchSize)
+    testset = MyIterableDataset(testset_file, var_input_features_num)
+    loader = torch.utils.data.DataLoader(testset, batch_size = var_batch_size)
     with torch.no_grad():
-        count = 0
         for data, label in loader:
             # 正規化
-            scaler = MinMaxScaler(feature_range=(0, 1))
-            nsamples, nx, ny = data.shape
-
-            dim2_inputs = data.reshape((nsamples, nx*ny))
-            inputs_scaled = scaler.fit_transform(dim2_inputs)
-            dim3_inputs = inputs_scaled.reshape(nsamples, nx, ny)
-            dim3_inputs = torch.tensor(dim3_inputs)
-            data = dim3_inputs.float()
-
-            count += 1
+            data = data_min_max_scaler(data)
             model_out = model(data)
-            temp = (model_out >= 0.5).float()
-            #print(temp)
-            accuracy += (temp == label).sum().item()
-            # 計算loss
-            loss = criterion(model_out, label.float())
 
-    loss = loss/count
-    print(accuracy,int(testsetNum))
-    accuracy = round(accuracy*100/int(testsetNum), 3)
-    print(f"test\nLoss: { '{:.3f}'.format(loss) }, Accuracy: {accuracy}%")
+            temp = (model_out >= 0.5).float()
+            accuracy += (temp == label).sum().item()
+            loss     += criterion(model_out, label.float())
+
+    testset_num = int(subprocess.getstatusoutput(f"wc -l {var_testset_file}")[1].split()[0])
+    loss = loss/testset_num
+    accuracy = round(accuracy*100/testset_num, 3)
+    print(f"testset\nLoss: { '{:.3f}'.format(loss) }, Accuracy: {accuracy}%")
 
 start_time = time.time()
 
 model = BiLSTM()
 criterion = torch.nn.BCELoss() # mean squared error : input x and target y.
-optimizer = torch.optim.Adam(model.parameters(), lr=learningRate) #0.01-0.001 lr = 0.001
-train_model(model, criterion, optimizer)
+optimizer = torch.optim.Adam(model.parameters(), lr=var_learning_rate) #0.01-0.001 lr = 0.001
+train_model(model, criterion, optimizer, var_trainset_file)
 execute = (time.time() - start_time)
 print("train model : ",time.strftime("%H:%M:%S", time.gmtime(execute)))
 
@@ -241,4 +214,4 @@ print(f"save model's parameter: {modelName}")
 load_model = BiLSTM()
 print("Load model...")
 load_model.load_state_dict(torch.load(modelName))
-test_model(load_model, criterion)
+test_model(load_model, criterion, var_testset_file)
