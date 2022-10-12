@@ -76,6 +76,6 @@ def analysis_vectorLen(data_withID_filename, date):
         filename = date + "/pmf_" + str(interval) + ".csv"
         df.to_csv(filename, index=False)
 
-date = "./2022-08-26"
+date = "../data/2022-08-26"
 
 analysis_vectorLen(date+"/dataRecord_vector_2.txt", date)

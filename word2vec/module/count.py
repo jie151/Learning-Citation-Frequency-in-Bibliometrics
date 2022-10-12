@@ -15,4 +15,4 @@ def count_isChange(path):
         print(f"update:    {update}, {round(update/sum,3)} ")
         print(f"no update: {no_update}, {round(no_update/sum,3)} ")
 
-count_isChange("./2022-08-26/dataRecord_word_add.txt")
+count_isChange("../data/2022-08-26/dataRecord_word_add.txt")

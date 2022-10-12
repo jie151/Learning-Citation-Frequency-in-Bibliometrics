@@ -118,7 +118,7 @@ def currentTime():
     return currentTime
 
 date  = currentTime()
-path = "./" + date
+path = "../data" + date
 strData_filename = path +"/data.txt"
 strData_withID_filename = path + "/data_withID.txt"
 vector_withID_filename = path + "/vector_withID.txt"
