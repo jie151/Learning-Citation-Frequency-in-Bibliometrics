@@ -1,5 +1,4 @@
 #有含label資料，看下次是否真的有更新，如n = 2, 有存n = 3 - n = 2時的引用次數，假設學者有五筆紀錄，只會產生1, 2, 3, 4的 data，因為最新的那筆沒有label
-import pandas as pd
 from module.save_to_txt import save_to_txt
 from module.remove_exist_file import remove_exist_file
 
@@ -53,7 +52,7 @@ def generate_data_to_txt(word_or_vector, read_word_or_vector_file, citedRecordWi
         print(f"number of data: {cnt}")
         if len(all_record_vectorList) > 0: save_to_txt(filename, all_record_vectorList)
         print(f"{ filename } created")
-date = "./2022-08-26"
+date = "../data/2022-09-21_dupli"
 
 word_or_vector = int(input("input 1 or 2 (1: vector for biLSTM, 2: word for bert): "))
 

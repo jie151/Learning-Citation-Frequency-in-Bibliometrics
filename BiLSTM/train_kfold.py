@@ -1,3 +1,4 @@
+from math import gamma
 import numpy as np
 import subprocess
 import time
@@ -18,8 +19,8 @@ var_learning_rate = 0.001
 var_dropout = 0.5
 
 # 設定訓練檔與測試檔
-var_trainset_file= "./random_balance_10.txt"
-var_testset_file = "./random_balance_10.txt"
+var_trainset_file= "../data/2022-09-21_dupli/trainset_10.txt"
+var_testset_file = "../data/2022-09-21_dupli/testset_10.txt"
 
 # 將向量與label再合成dataset
 class MyDataset(torch.utils.data.Dataset):
@@ -106,7 +107,7 @@ def data_min_max_scaler(data):
 
     return data_scaled.float()
 
-def train_model(model, criterion, optimizer, trainset_file):
+def train_model(model, criterion, optimizer, scheduler, trainset_file):
     # Defind the k-fold cross validator
     kFold = StratifiedKFold(n_splits = var_kFold, random_state=202, shuffle=True)
 
@@ -121,7 +122,9 @@ def train_model(model, criterion, optimizer, trainset_file):
             data_label_subset = MyDataset(data_subset, label_subset)
 
             all_fold_accuracy = {}
-            print(f"--------\nepoch: {epoch+1}/{var_epoch_num}")
+
+            print(f"--------\nepoch: {epoch+1}/{var_epoch_num}, learning rate: {round(scheduler.get_last_lr()[0], 5)}")
+
             for fold, (train_indexs, valid_indexs) in enumerate(kFold.split(data_subset, label_subset)):
                 print(f"train/valid size: {len(train_indexs)}/{len(valid_indexs)}")
 
@@ -155,6 +158,7 @@ def train_model(model, criterion, optimizer, trainset_file):
                     # 用梯度下降來更新參數值 # 參考:https://blog.csdn.net/PanYHHH/article/details/107361827
                     optimizer.step()
 
+
                 # 一個fold的準確率與loss
                 accuracy_fold = round(accuracy_fold*100/len(train_indexs), 3)
                 loss_fold = loss_fold/len(train_indexs)
@@ -175,6 +179,9 @@ def train_model(model, criterion, optimizer, trainset_file):
                 print(f"fold {key+1}: {round(value, 3)} %")
                 sum += value
             print(f"average: {round(sum/len(all_fold_accuracy.items()),3)} %\n")
+
+            scheduler.step()
+
 
 def test_model(model, criterion, testset_file):
     model.eval()
@@ -202,7 +209,8 @@ start_time = time.time()
 model = BiLSTM()
 criterion = torch.nn.BCELoss() # mean squared error : input x and target y.
 optimizer = torch.optim.Adam(model.parameters(), lr=var_learning_rate) #0.01-0.001 lr = 0.001
-train_model(model, criterion, optimizer, var_trainset_file)
+optimizer_ExpLR = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.98)
+train_model(model, criterion, optimizer , optimizer_ExpLR, var_trainset_file)
 execute = (time.time() - start_time)
 print("train model : ",time.strftime("%H:%M:%S", time.gmtime(execute)))
 
