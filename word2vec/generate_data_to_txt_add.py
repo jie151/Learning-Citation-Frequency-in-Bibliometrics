@@ -7,8 +7,8 @@ def get_next_record_isChange(record_list, n):
     next_citation = int(record_list[4*n + 4])
     current_citation = int(record_list[4*n])
     isChange = 1 if (next_citation - current_citation != 0) else 0
-    if isChange == 1:
-        print(f"{record_list[0]}, curr: {current_citation}, next: {next_citation}, isChange:{isChange}")
+
+    #print(f"{record_list[0]}, curr: {current_citation}, next: {next_citation}, isChange:{isChange}")
     return isChange
 
 # 會去掉 article數 < 1 且 record < 輸入的n的學者
@@ -19,6 +19,8 @@ def generate_data_to_txt(word_or_vector, read_word_or_vector_file, citedRecordWi
 
         all_record_vectorList = []
         cnt = 0
+        cnt_scholar_with_4_article = 0
+        cnt_scholar = 0
         for index, (each_vector, each_record) in enumerate(zip(vectorFile, recordFile)):
             if index % 3000 == 0 and index > 0: # 每3000名學者就存起來
                 save_to_txt(filename, all_record_vectorList)
@@ -30,7 +32,12 @@ def generate_data_to_txt(word_or_vector, read_word_or_vector_file, citedRecordWi
                 num_record = int(record[2])
                 # check number of articles > 1
                 if (int(record[1]) > 1):
+                    cnt_scholar += 1
+                    if (num_record > 3):
+                        cnt_scholar_with_4_article += 1
+
                     for n_record in range(1, num_record):
+
                         cnt += 1
                         current_updateTime_index = 4 * n_record - 1
                         # 確認這一次是否有增加，如_record = 2, 確認第2筆與第1筆時的引用次數是否不同， default:1
@@ -49,7 +56,8 @@ def generate_data_to_txt(word_or_vector, read_word_or_vector_file, citedRecordWi
                     print(f"warning! {index}, {vector[0]} : {record[0]}, length: {len(record)}")
 
 
-        print(f"number of data: {cnt}")
+        print(f"number of data: {cnt}, number of scholar: {cnt_scholar}")
+        print(f"number of scholar 4 or more article : {cnt_scholar_with_4_article}")
         if len(all_record_vectorList) > 0: save_to_txt(filename, all_record_vectorList)
         print(f"{ filename } created")
 date = "../data/2022-09-21_dupli"

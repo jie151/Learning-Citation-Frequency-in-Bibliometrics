@@ -54,6 +54,7 @@ def balance_random (update_path, noupdate_path):
             if index in random_list:
                 selected_list.append(update_line)
                 selected_list.append(noupdate_line)
+        random.shuffle(selected_list)
         save_to_txt(tempFilename, selected_list)
 
     with open(tempFilename, "r") as tmpFile:
@@ -69,6 +70,8 @@ def balance_random (update_path, noupdate_path):
             line = line.split()
 
             if (index % 2500 == 0 and index != 0):
+                random.shuffle(train_list)
+                random.shuffle(test_list)
                 save_to_txt(trainFile, train_list)
                 save_to_txt(testFile, test_list)
                 train_list = []
@@ -81,10 +84,12 @@ def balance_random (update_path, noupdate_path):
                 train_list.append(line)
             else :
                 test_list.append(line)
+        random.shuffle(train_list)
+        random.shuffle(test_list)
         save_to_txt(trainFile, train_list)
         save_to_txt(testFile, test_list)
 
     remove_exist_file(tempFilename)
 
-#balance_apart("../../data/2022-09-21_dupli/dataRecord_vector_add.txt")
+balance_apart("../../data/2022-09-21_dupli/dataRecord_word_add.txt")
 balance_random("./update.txt", "./noUpdate.txt")
