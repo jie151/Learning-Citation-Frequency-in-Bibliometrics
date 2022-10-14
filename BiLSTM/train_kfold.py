@@ -180,7 +180,7 @@ def train_model(model, criterion, optimizer, scheduler, trainset_file):
                 sum += value
             print(f"average: {round(sum/len(all_fold_accuracy.items()),3)} %\n")
 
-            scheduler.step()
+        scheduler.step()
 
 
 def test_model(model, criterion, testset_file):
