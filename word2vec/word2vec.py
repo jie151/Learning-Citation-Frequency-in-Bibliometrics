@@ -1,11 +1,11 @@
+import datetime
 import os
-import time
 import re
-from pymongo import MongoClient
+import time
 from gensim.models import Word2Vec
 from gensim.models.word2vec import LineSentence
-import datetime
 from langdetect import detect
+from pymongo import MongoClient
 from module.save_to_txt import save_to_txt
 from module.remove_exist_file import remove_exist_file
 
