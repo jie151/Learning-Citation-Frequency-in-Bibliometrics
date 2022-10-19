@@ -1,7 +1,7 @@
 import random
 import subprocess
-from save_to_txt import save_to_txt
-from remove_exist_file import remove_exist_file
+from module.save_to_txt import save_to_txt
+from module.remove_exist_file import remove_exist_file
 
 # 把有更新、沒更新的資料分別放在不同檔案裡
 def apart_update_noUpdate(path, update_file, noUpdate_file):
@@ -46,7 +46,7 @@ def balance_random(update_path, noUpdate_path, dataset_path):
 
     with open(update_path, "r") as file, open(noUpdate_path, "r") as no_file:
         selected_list = []
-        for index, (update_list, noUpdate_line) in enumerate(zip(file, no_file)):
+        for index, (update_line, noUpdate_line) in enumerate(zip(file, no_file)):
             update_line   = update_line.split()
             noUpdate_line = noUpdate_line.split()
 
@@ -82,7 +82,7 @@ def balance_random(update_path, noUpdate_path, dataset_path):
 
             if (line[0] == '0' and noUpdate_num < num/2) or (line[0] == '1' and update_num < num/2):
                 if line[0] == '1': update_num += 1
-                else: no_update_num += 1
+                else: noUpdate_num += 1
                 train_list.append(line)
             else :
                 test_list.append(line)
@@ -93,9 +93,9 @@ def balance_random(update_path, noUpdate_path, dataset_path):
         print(f"create file {trainFile}, {testFile}")
     remove_exist_file(temp_filename)
 
-path = "../../data/2022-09-21_dupli"
-update_file = path + "/update.txt"
-noUpdate_file = path + "/noUpdate.txt"
+#path = "../../data/2022-09-21_dupli"
+#update_file = path + "/update.txt"
+#noUpdate_file = path + "/noUpdate.txt"
 
-apart_update_noUpdate(path + "/dataRecord_word_add.txt", update_file, noUpdate_file)
-balance_random(update_file, noUpdate_file, path)
+#apart_update_noUpdate(path + "/dataRecord_word_add.txt", update_file, noUpdate_file)
+#balance_random(update_file, noUpdate_file, path)
