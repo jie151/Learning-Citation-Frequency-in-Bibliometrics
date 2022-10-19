@@ -7,7 +7,7 @@ from   sklearn.model_selection import StratifiedKFold
 from   sklearn.preprocessing import MinMaxScaler
 
 # config
-var_model_layer_num = 4         # number of recurrent layers
+var_model_layer_num = 8         # number of recurrent layers
 var_batch_size = 32
 var_dataset_size = 2000         # 一次抽多少做kfold
 var_input_features_num = 1200       # the number of expected features in the input x
