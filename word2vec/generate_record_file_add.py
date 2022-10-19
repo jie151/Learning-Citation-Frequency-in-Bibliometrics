@@ -1,5 +1,4 @@
 # 生成每個學者的紀錄檔，包括h_index, i10_index
-from tabnanny import filename_only
 from pymongo import MongoClient
 from module.save_to_txt import save_to_txt
 from module.remove_exist_file import remove_exist_file

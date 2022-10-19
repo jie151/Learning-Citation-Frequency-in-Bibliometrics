@@ -1,4 +1,3 @@
-from math import dist
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt

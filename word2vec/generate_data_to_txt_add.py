@@ -1,6 +1,7 @@
 #有含label資料，看下次是否真的有更新，如n = 2, 有存n = 3 - n = 2時的引用次數，假設學者有五筆紀錄，只會產生1, 2, 3, 4的 data，因為最新的那筆沒有label
 from module.save_to_txt import save_to_txt
 from module.remove_exist_file import remove_exist_file
+from module.get_train_data import apart_update_noUpdate, balance_random
 
 #要改h_index, i10_index
 def get_next_record_isChange(record_list, n):
@@ -72,3 +73,11 @@ else:
     read_word_or_vector_file = date + "/data_withID.txt"
 
 generate_data_to_txt(word_or_vector, read_word_or_vector_file, date + "/citedRecord_withID_add.txt", filename)
+
+generate_train_test_data = input("generate train/test file ? (input yes or elae)")
+if(generate_train_test_data == "yes"):
+    update_file = date + "/update.txt"
+    noUpdate_file = date + "/noUpdate.txt"
+
+    apart_update_noUpdate(filename, update_file, noUpdate_file)
+    balance_random(update_file, noUpdate_file, date)
