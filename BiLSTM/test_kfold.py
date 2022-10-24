@@ -1,3 +1,4 @@
+from cProfile import label
 from math import gamma
 import numpy as np
 import subprocess
@@ -10,17 +11,17 @@ from   sklearn.preprocessing import MinMaxScaler
 var_model_layer_num = 8         # number of recurrent layers
 var_batch_size = 32
 var_dataset_size = 1000         # 一次抽多少做kfold
-var_input_features_num = 1200   # the number of expected features in the input x
-var_hidden_features_num = 1024  # the number of features in the hidden state
+var_input_features_num = 1200       # the number of expected features in the input x
+var_hidden_features_num = 1024   # the number of features in the hidden state
 var_output_dim = 1              # model's output
-var_epoch_num = 10
+var_epoch_num = 100
 var_kFold = 5
 var_learning_rate = 0.001
 var_dropout = 0.5
 
 # 設定訓練檔與測試檔
-var_trainset_file= "../data/2022-09-21_dupli/trainset_500.txt"
-var_testset_file = "../data/2022-09-21_dupli/testset_500.txt"
+var_trainset_file= "../data/2022-09-21_dupli/trainset_10.txt"
+var_testset_file = "../data/2022-09-21_dupli/testset_10.txt"
 
 # 將向量與label再合成dataset
 class MyDataset(torch.utils.data.Dataset):
@@ -97,6 +98,13 @@ class BiLSTM(torch.nn.Module):
 
         return out
 
+def count_label_ratio(datalist):
+    update = 0
+    for label in datalist:
+        if label == 1 : update += 1
+    return update
+    #print(f"update/total : {round(update/len(datalist), 3)}, update: {update}")
+
 def data_min_max_scaler(data):
     scaler = MinMaxScaler(feature_range=(0, 1))
     nsamples, nx, ny = data.shape
@@ -114,7 +122,7 @@ def train_model(model, criterion, optimizer, scheduler, trainset_file):
     for epoch in range(var_epoch_num):
         # 批次從檔案中拿出一部分的資料作為dataset
         dataset = MyIterableDataset(trainset_file, var_input_features_num)
-        dataset_loader = torch.utils.data.DataLoader(dataset, batch_size = var_dataset_size)
+        dataset_loader = torch.utils.data.DataLoader(dataset, batch_size = var_dataset_size, shuffle=False)
 
         for data_subset, label_subset in dataset_loader:
             # MinMaxScaler
@@ -122,11 +130,12 @@ def train_model(model, criterion, optimizer, scheduler, trainset_file):
             data_label_subset = MyDataset(data_subset, label_subset)
 
             all_fold_accuracy = {}
+            all_fold_label = {}
 
             print(f"--------\nepoch: {epoch+1}/{var_epoch_num}, learning rate: {round(scheduler.get_last_lr()[0], 5)}")
-
+            count_label_ratio(label_subset)
             for fold, (train_indexs, valid_indexs) in enumerate(kFold.split(data_subset, label_subset)):
-                print(f"train/valid size: {len(train_indexs)}/{len(valid_indexs)}")
+                print(f"train/valid size: {len(train_indexs)} /{len(valid_indexs)}")
 
                 # Sample elements randomly from a given list of indexs, no replacement.
                 train_subsampler = torch.utils.data.SubsetRandomSampler(train_indexs)
@@ -139,9 +148,11 @@ def train_model(model, criterion, optimizer, scheduler, trainset_file):
                 # Set loss, accuracy value
                 loss_fold     = 0
                 accuracy_fold = 0
+                update_label  = 0
 
                 # Iterate over the DataLoader for training data
                 for inputs, labels in trainLoader:
+                    update_label += count_label_ratio(labels)
                     # Zero the gradients
                     optimizer.zero_grad()
 
@@ -163,24 +174,27 @@ def train_model(model, criterion, optimizer, scheduler, trainset_file):
                 accuracy_fold = round(accuracy_fold*100/len(train_indexs), 3)
                 loss_fold = loss_fold/len(train_indexs)
 
-                print(f"fold {fold+1}/{var_kFold}, Loss: { '{:.3f}'.format(loss_fold) }, Accuracy: {accuracy_fold}%")
+                print(f"fold {fold+1}/{var_kFold}, label(update/total): {update_label}/{len(train_indexs)}, Loss: { '{:.3f}'.format(loss_fold) }, Accuracy: {accuracy_fold}%")
 
                 # validation theis fold
                 with torch.no_grad():
                     correct = 0
+                    update_label = 0
                     for valid_inputs, valid_labels in validLoader:
+                        update_label += count_label_ratio(valid_labels)
                         model_out = model(valid_inputs)
                         temp = (model_out >= 0.5).float()
                         correct += (temp == valid_labels).sum().item()
                     all_fold_accuracy[fold] = 100.0 * (correct/len(valid_indexs))
+                    all_fold_label[fold] = update_label/len(valid_indexs)
             print(f"********\nKFold cross validation results {var_kFold} folds")
             sum = 0.0
             for key, value in all_fold_accuracy.items():
-                print(f"fold {key+1}: {round(value, 3)} %")
+                print(f"fold {key+1}: {round(value, 3)} %, label(update/total): {all_fold_label[key]}")
                 sum += value
             print(f"average: {round(sum/len(all_fold_accuracy.items()),3)} %\n")
 
-        #scheduler.step()
+        scheduler.step()
 
 
 def test_model(model, criterion, testset_file):
@@ -210,12 +224,12 @@ model = BiLSTM()
 criterion = torch.nn.BCELoss() # mean squared error : input x and target y.
 optimizer = torch.optim.Adam(model.parameters(), lr=var_learning_rate) #0.01-0.001 lr = 0.001
 optimizer_ExpLR = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.98)
-#train_model(model, criterion, optimizer , optimizer_ExpLR, var_trainset_file)
+train_model(model, criterion, optimizer , optimizer_ExpLR, var_trainset_file)
 execute = (time.time() - start_time)
 print("train model : ",time.strftime("%H:%M:%S", time.gmtime(execute)))
 
-modelName = "model_state_dict.pt"
-#torch.save(model.state_dict(), modelName)
+modelName = "model_state_dict_test.pt"
+torch.save(model.state_dict(), modelName)
 print(f"save model's parameter: {modelName}")
 
 # Load model
