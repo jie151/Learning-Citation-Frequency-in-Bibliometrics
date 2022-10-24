@@ -1,4 +1,3 @@
-from math import gamma
 import numpy as np
 import subprocess
 import time
@@ -96,6 +95,11 @@ class BiLSTM(torch.nn.Module):
         out = self.sigmoid(out)
 
         return out
+def count_label_ratio(datalist):
+    update = 0
+    for label in datalist:
+        if label == 1: update += 1
+    return update
 
 def data_min_max_scaler(data):
     scaler = MinMaxScaler(feature_range=(0, 1))
@@ -122,9 +126,10 @@ def train_model(model, criterion, optimizer, scheduler, trainset_file):
             data_label_subset = MyDataset(data_subset, label_subset)
 
             all_fold_accuracy = {}
+            all_fold_label = {}
 
             print(f"--------\nepoch: {epoch+1}/{var_epoch_num}, learning rate: {round(scheduler.get_last_lr()[0], 5)}")
-
+            print(f"label/total: {count_label_ratio(label_subset)/var_dataset_size}")
             for fold, (train_indexs, valid_indexs) in enumerate(kFold.split(data_subset, label_subset)):
                 print(f"train/valid size: {len(train_indexs)}/{len(valid_indexs)}")
 
@@ -139,6 +144,7 @@ def train_model(model, criterion, optimizer, scheduler, trainset_file):
                 # Set loss, accuracy value
                 loss_fold     = 0
                 accuracy_fold = 0
+                update_label  = 0
 
                 # Iterate over the DataLoader for training data
                 for inputs, labels in trainLoader:
@@ -150,6 +156,7 @@ def train_model(model, criterion, optimizer, scheduler, trainset_file):
 
                     temp = (model_out >= 0.5).float()
                     accuracy_fold += (temp == labels).sum().item()
+                    update_label += count_label_ratio(labels)
 
                     loss = criterion(model_out, labels.float())
                     loss_fold += loss
@@ -163,20 +170,23 @@ def train_model(model, criterion, optimizer, scheduler, trainset_file):
                 accuracy_fold = round(accuracy_fold*100/len(train_indexs), 3)
                 loss_fold = loss_fold/len(train_indexs)
 
-                print(f"fold {fold+1}/{var_kFold}, Loss: { '{:.3f}'.format(loss_fold) }, Accuracy: {accuracy_fold}%")
+                print(f"fold {fold+1}/{var_kFold}, label(update/total): {update_label}/{len(train_indexs)}, Loss: { '{:.3f}'.format(loss_fold) }, Accuracy: {accuracy_fold}%")
 
                 # validation theis fold
                 with torch.no_grad():
                     correct = 0
+                    update_label = 0
                     for valid_inputs, valid_labels in validLoader:
                         model_out = model(valid_inputs)
                         temp = (model_out >= 0.5).float()
                         correct += (temp == valid_labels).sum().item()
+                        update_label += count_label_ratio(valid_labels)
                     all_fold_accuracy[fold] = 100.0 * (correct/len(valid_indexs))
+                    all_fold_label[fold] = update_label/len(valid_indexs)
             print(f"********\nKFold cross validation results {var_kFold} folds")
             sum = 0.0
             for key, value in all_fold_accuracy.items():
-                print(f"fold {key+1}: {round(value, 3)} %")
+                print(f"fold {key+1}: {round(value, 3)} %, label(update/total): {all_fold_label[key]}")
                 sum += value
             print(f"average: {round(sum/len(all_fold_accuracy.items()),3)} %\n")
 
