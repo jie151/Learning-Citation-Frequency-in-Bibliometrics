@@ -210,12 +210,12 @@ model = BiLSTM()
 criterion = torch.nn.BCELoss() # mean squared error : input x and target y.
 optimizer = torch.optim.Adam(model.parameters(), lr=var_learning_rate) #0.01-0.001 lr = 0.001
 optimizer_ExpLR = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.98)
-#train_model(model, criterion, optimizer , optimizer_ExpLR, var_trainset_file)
+train_model(model, criterion, optimizer , optimizer_ExpLR, var_trainset_file)
 execute = (time.time() - start_time)
 print("train model : ",time.strftime("%H:%M:%S", time.gmtime(execute)))
 
 modelName = "model_state_dict.pt"
-#torch.save(model.state_dict(), modelName)
+torch.save(model.state_dict(), modelName)
 print(f"save model's parameter: {modelName}")
 
 # Load model
