@@ -12,14 +12,14 @@ var_dataset_size = 1000         # 一次抽多少做kfold
 var_input_features_num = 1200   # the number of expected features in the input x
 var_hidden_features_num = 512  # the number of features in the hidden state
 var_output_dim = 1              # model's output
-var_epoch_num = 10
+var_epoch_num = 100
 var_kFold = 1
 var_learning_rate = 0.001
 var_dropout = 0.5
 
 # 設定訓練檔與測試檔
-var_trainset_file= "../data/2022-09-21_dupli/trainset_10000.txt"
-var_testset_file = "../data/2022-09-21_dupli/testset_10000.txt"
+var_trainset_file= "../data/2022-09-21_dupli/trainset_20000.txt"
+var_testset_file = "../data/2022-09-21_dupli/testset_100000.txt"
 
 # Create Iterable dataset
 class MyIterableDataset(torch.utils.data.IterableDataset):
@@ -154,8 +154,8 @@ def train_model(model, criterion, optimizer, scheduler, trainset_file):
                 los = loss_iterator/cnt
                 dataList = [loss_iterator.item(), accuracy_iterator, cnt]
                 save_to_txt(dataList, loss_acc_filename)
+                print(f"iterator: loss: {'{:.3f}'.format(los)}, acc: {round(acc, 3)}, cnt: {cnt}")
                 cnt = accuracy_iterator = loss_iterator = 0
-                print(f"iterator: loss: {'{:.3f}'.format(los)}, acc: {round(acc, 3)}")
 
         if(cnt != 0):
             dataList = [loss_iterator.item(), accuracy_iterator, cnt]
@@ -170,19 +170,16 @@ def train_model(model, criterion, optimizer, scheduler, trainset_file):
                 dataSize += int(line[2])
 
         print(f"*****loss: {'{:.3f}'.format(loss_epoch/dataSize)}, accuracy: {round(accuracy_epoch/dataSize,3)}, dataSize: {dataSize}")
+        scheduler.step()
 
 def test_model(model, criterion, testset_file):
     model.eval()
-    accuracy_all = 0
-    loss_all = 0
-    cnt = 0
     accuracy = 0
     loss = 0
     testset = MyIterableDataset(testset_file, var_input_features_num)
     loader = torch.utils.data.DataLoader(testset, batch_size = var_batch_size)
     with torch.no_grad():
         for data, label in loader:
-            cnt += len(label)
             # 正規化
             data = data_min_max_scaler(data)
             model_out = model(data)
@@ -190,16 +187,10 @@ def test_model(model, criterion, testset_file):
             temp = (model_out >= 0.5).float()
             accuracy += (temp == label).sum().item()
             loss     += criterion(model_out, label.float())
-            if(cnt > 500):
-                accuracy_all = (accuracy/cnt + accuracy_all) / 2
-                loss_all = (loss/cnt + loss_all) / 2
-                cnt = 0
-                accuracy = 0
-                loss = 0
-    if(cnt != 0):
-        accuracy_all = (accuracy/cnt + accuracy_all) / 2
-        loss_all = (loss/cnt + loss_all) / 2
-    print(f"testset\nLoss: { '{:.3f}'.format(loss_all) }, Accuracy: {round(accuracy_all, 3)}%")
+    testset_num = int(subprocess.getstatusoutput(f"wc -l {var_testset_file}")[1].split()[0])
+    loss = loss/testset_num
+    accuracy = round(accuracy*100/testset_num, 3)
+    print(f"testset\nLoss: { '{:.3f}'.format(loss) }, Accuracy: {accuracy}%")
 
 start_time = time.time()
 

@@ -14,7 +14,7 @@ var_hidden_features_num = 1024  # the number of features in the hidden state
 var_output_dim = 1              # model's output
 var_epoch_num = 10
 var_kFold = 5
-var_learning_rate = 0.001
+var_learning_rate = 0.0001
 var_dropout = 0.5
 
 # 設定訓練檔與測試檔
