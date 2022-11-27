@@ -18,8 +18,8 @@ var_learning_rate = 0.001
 var_dropout = 0.5
 
 # 設定訓練檔與測試檔
-var_trainset_file= "../data/2022-09-21_dupli/trainset_20000.txt"
-var_testset_file = "../data/2022-09-21_dupli/testset_100000.txt"
+var_trainset_file= "../data/2022-11-20/trainset_20000.txt"
+var_testset_file = "../data/2022-11-20/testset_100000.txt"
 
 # Create Iterable dataset
 class MyIterableDataset(torch.utils.data.IterableDataset):
@@ -171,6 +171,7 @@ def train_model(model, criterion, optimizer, scheduler, trainset_file):
 
         print(f"*****loss: {'{:.3f}'.format(loss_epoch/dataSize)}, accuracy: {round(accuracy_epoch/dataSize,3)}, dataSize: {dataSize}")
         scheduler.step()
+        remove_exist_file(loss_acc_filename)
 
 def test_model(model, criterion, testset_file):
     model.eval()
