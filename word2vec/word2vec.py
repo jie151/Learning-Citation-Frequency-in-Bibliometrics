@@ -17,7 +17,7 @@ def get_scholarData_from_mongoDB(strData_filename, strData_withID_filename):
     max_length = 0 # the largest set of vectors
     totalSize = db.articles.estimated_document_count()
     start = 0 # control where MongoDB begins returning results
-    slice_size = 5000 # the maximum number of documents/ records the cursor will return
+    slice_size = 3000 # the maximum number of documents/ records the cursor will return
 
     i = start
     current = start
@@ -57,19 +57,20 @@ def get_scholarData_from_mongoDB(strData_filename, strData_withID_filename):
                 data.extend(article['authors'].split())
                 data.extend(article['source'].split())
                 data.extend(article['title'].split())
+            if not_ENarticle > 0:
 
-            data = [re.sub("[^a-zA-Z0-9]+", "", w) for w in data]   # remove non english characters
-            data = [w.lower() for w in data]                        # convert all characters to lowercase
-            #data = list(set(data))                                  # remove duplicates
-            data = list(filter(None, data))                         # remove empty string ''
+                data = [re.sub("[^a-zA-Z0-9]+", "", w) for w in data]   # remove non english characters
+                data = [w.lower() for w in data]                        # convert all characters to lowercase
+                #data = list(set(data))                                  # remove duplicates
+                data = list(filter(None, data))                         # remove empty string ''
 
-            scholarID_list.append([doc['_id'], len(doc['Articles']) - not_ENarticle])
-            print(f"i: {i}, id: { doc['_id'] }, article: { len(doc['Articles']) - not_ENarticle } , len: {len(data)} ")
+                scholarID_list.append([doc['_id'], len(doc['Articles']) - not_ENarticle])
+                print(f"i: {i}, id: { doc['_id'] }, article: { len(doc['Articles']) - not_ENarticle } , len: {len(data)} ")
 
-            i = i + 1
-            max_length = len(data) if (max_length < len(data)) else max_length
+                i = i + 1
+                max_length = len(data) if (max_length < len(data)) else max_length
 
-            collection_dataList.append(data)
+                collection_dataList.append(data)
 
         save_to_txt(strData_filename, collection_dataList)
 
