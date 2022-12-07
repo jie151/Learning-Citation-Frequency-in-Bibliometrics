@@ -19,8 +19,8 @@ var_learning_rate = 0.001
 var_dropout = 0.5
 
 # 設定訓練檔與測試檔
-#var_testset_file = "../data/2022-11-20/testset_100000.txt"
-var_testset_file = "./trainset_50000.txt"
+var_testset_file = "../data/2022-11-20/testset_230000.txt"
+#var_testset_file = "./trainset_50000.txt"
 # Create Iterable dataset
 class MyIterableDataset(torch.utils.data.IterableDataset):
     def __init__(self, file_path, each_scholar_vectorLen):
@@ -164,9 +164,6 @@ def test_model(model, criterion, testset_file):
     accuracy = round(accuracy*100/testset_num, 3)
     print(f"testset\nLoss: { '{:.3f}'.format(loss) }, Accuracy: {accuracy}%")
 
-model = BiLSTM()
-modelName = "model_state_dict.pt"
-torch.save(model.state_dict(), modelName)
 # Load model
 criterion = torch.nn.BCELoss() # mean squared error : input x and target y.
 modelName = "model_state_dict.pt"
@@ -175,5 +172,5 @@ print("Load model...")
 load_model.load_state_dict(torch.load(modelName))
 start_time = time.time()
 test_model(load_model, criterion, var_testset_file)
-execute = time.time() - time.time()
+execute = start_time - time.time()
 print("test model : ",time.strftime("%H:%M:%S", time.gmtime(execute)))
